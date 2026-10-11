@@ -141,3 +141,42 @@ body.dark .media-type {
 body.dark .footer {
   color: #98989d;
 }
+
+/* Category rows – horizontal scrolling */
+.category-row {
+  margin-bottom: 2.5rem;
+}
+
+.category-row h2 {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.row-scroller {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.5rem;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.row-scroller::-webkit-scrollbar {
+  height: 8px;
+}
+
+.row-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.row-scroller::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.row-scroller .media-card {
+  flex: 0 0 180px;
+  width: 180px;
+}

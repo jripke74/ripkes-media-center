@@ -109,3 +109,25 @@ The `<head>` is for information *about* the page, not content the user sees. Sea
 
 ---
 *Last updated: Chunk 1.1 – SEO meta tags*
+
+## Chunk 2: Apple TV-Style Horizontal Category Rows
+
+### What we did
+- Grouped sample media into categories (Movies, TV Shows, Documentaries, Music, Photos, Home Videos, Training).
+- Replaced the single grid with multiple horizontal scrolling rows.
+- Each row scrolls sideways with the mouse wheel, trackpad, or touch.
+- Cards stay the same size and keep the hover lift effect.
+
+### Why this layout?
+This matches the “grid-like scrolling” / Apple TV look more closely than a single wrapping grid. Users can scan categories quickly and scroll within each row.
+
+### Key learning notes
+- We used Flexbox (`display: flex`) + `overflow-x: auto` for the horizontal scroller.
+- `flex: 0 0 180px` keeps every card the same fixed width so the row doesn’t shrink them.
+- JavaScript now builds the entire library dynamically from the `mediaCategories` array.
+- The old single-grid code was removed so the page stays clean.
+
+### Commit
+```bash
+git add index.html css/styles.css js/app.js DEVELOPMENT.md
+git commit -m "Add horizontal category rows for Apple TV-style library"
