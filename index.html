@@ -43,17 +43,28 @@
 </head>
 
 <body>
-  <header class="header">
-    <h1>Ripke’s Media Center</h1>
-    <button id="theme-toggle" class="theme-toggle"
-      aria-label="Toggle dark mode">
-      🌙
-    </button>
-  </header>
+<header class="header">
+  <h1>Ripke’s Media Center</h1>
+  <div class="header-controls">
+    <input type="search" id="search-input" placeholder="Search library…" aria-label="Search library">
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+  </div>
+</header>
 
 <main>
   <div id="library"></div>
 </main>
+
+<!-- Detail panel -->
+<div id="detail-overlay" class="detail-overlay hidden">
+  <div class="detail-panel">
+    <button id="detail-close" class="detail-close" aria-label="Close">&times;</button>
+    <img id="detail-image" alt="">
+    <h2 id="detail-title"></h2>
+    <p id="detail-type"></p>
+    <button id="detail-play" class="play-button">▶ Play</button>
+  </div>
+</div>
 
   <footer class="footer">
     <p>&copy; <span id="current-year"></span> Jeff Ripke. All

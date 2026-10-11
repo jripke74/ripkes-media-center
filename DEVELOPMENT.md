@@ -131,3 +131,22 @@ This matches the “grid-like scrolling” / Apple TV look more closely than a s
 ```bash
 git add index.html css/styles.css js/app.js DEVELOPMENT.md
 git commit -m "Add horizontal category rows for Apple TV-style library"
+
+## Chunk 3: Search + Basic Detail View
+
+### What we added
+- Search input in the header that filters cards by title or type across all categories.
+- Empty rows are hidden when nothing matches.
+- Clicking any card opens a simple detail panel with the image, title, type, and a Play button (placeholder for now).
+- Overlay closes when you click the × or the dark background.
+
+### Key learning notes
+- Search uses the `input` event and checks `dataset` attributes we stored on each card.
+- The detail view is just a fixed overlay (`position: fixed`) shown/hidden with a CSS class.
+- The Play button currently shows an alert; real video/audio playback comes later.
+- We kept the existing horizontal row layout and dark mode.
+
+### Commit
+```bash
+git add index.html css/styles.css js/app.js DEVELOPMENT.md
+git commit -m "Add search filter and basic detail view for media cards"
