@@ -89,8 +89,16 @@ function setupThemeToggle() {
   });
 }
 
+function setCurrentYear() {
+  const yearSpan = document.getElementById("current-year");
+  if (yearSpan) {
+    yearSpan.textContent = new Date().getFullYear();
+  }
+}
+
 // Run when the page loads
 document.addEventListener("DOMContentLoaded", () => {
   renderMediaGrid();
   setupThemeToggle();
+  setCurrentYear();
 });
