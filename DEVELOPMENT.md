@@ -150,3 +150,41 @@ git commit -m "Add horizontal category rows for Apple TV-style library"
 ```bash
 git add index.html css/styles.css js/app.js DEVELOPMENT.md
 git commit -m "Add search filter and basic detail view for media cards"
+
+## Chunk 4: Node.js + Express Backend (basic)
+
+### What we did
+- Added a simple Express server (`server.js`).
+- The server serves the existing frontend files.
+- Added a `/api/media` endpoint that returns the sample library as JSON.
+- Created `package.json` and installed Express.
+
+### Why this step?
+This is the start of the backend. The frontend still works the same way, but now we have a server we can extend (authentication, database, real media files, etc.).
+
+### How to run it
+```bash
+npm install express   # only needed the first time
+npm start
+
+## Chunk 5: Load Media from the API
+
+### What we did
+- Removed the hard-coded `mediaCategories` array from `js/app.js`.
+- Added an `async` function `loadMedia()` that fetches `/api/media`.
+- The rest of the UI (rows, search, detail panel, dark mode) is unchanged.
+- Added a simple error message if the server is not running.
+
+### Why this matters
+The frontend no longer owns the data. This is the start of a real client/server split. Later we can swap the sample data in `server.js` for real database results without changing the UI code.
+
+### Key learning notes
+- `fetch("/api/media")` requests JSON from our Express server.
+- `async/await` makes the asynchronous code easy to read.
+- We call `loadMedia()` on `DOMContentLoaded` so the page is ready before we try to render.
+- Error handling is basic for now (console + a message on the page).
+
+### Commit
+```bash
+git add js/app.js DEVELOPMENT.md
+git commit -m "Load media library from /api/media instead of hard-coded data"
