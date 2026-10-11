@@ -79,5 +79,33 @@ ripkes-media-center/
 - Dark mode is done with a CSS class on the `<body>` and a toggle button.
 - All of this is pure vanilla (no frameworks) so you understand the fundamentals.
 
+## Chunk 1.1: SEO Meta Tags in the HTML Head
+
+### What we added
+Basic SEO-friendly metadata inside the `<head>` of `index.html`:
+
+- **Title** – Clear, descriptive page title.
+- **Meta description** – Short summary shown in search results (aim for ~150–160 characters).
+- **Keywords** – Optional; modern search engines mostly ignore this, but it doesn’t hurt for a learning project.
+- **Canonical URL** – Tells search engines the preferred address of the page (update the placeholder when you deploy to Heroku).
+- **Open Graph tags** – Control how the page looks when shared on Facebook, LinkedIn, Slack, etc.
+- **Twitter Card tags** – Similar control for Twitter/X.
+- **Theme color** – Lets the browser tint its UI to match the light/dark theme.
+
+### Why this matters
+Even for a personal/learning project, good metadata helps if you later share the link or want the site to look professional in search results and social shares. These tags are free and only take a minute to add.
+
+### What you should do
+1. Replace the placeholder URLs (`https://your-app-name.herokuapp.com/`) with your real Heroku app URL once you deploy.
+2. Later you can replace the placeholder Open Graph image with a real screenshot or logo.
+3. Commit the change:
+   ```bash
+   git add index.html DEVELOPMENT.md
+   git commit -m "Add SEO meta tags and Open Graph data to index.html"
+   ```
+
+### Key learning note
+The `<head>` is for information *about* the page, not content the user sees. Search engines and social platforms read these tags. The visible content stays in the `<body>`.
+
 ---
-*Last updated: Chunk 1*
+*Last updated: Chunk 1.1 – SEO meta tags*
