@@ -188,3 +188,21 @@ The frontend no longer owns the data. This is the start of a real client/server 
 ```bash
 git add js/app.js DEVELOPMENT.md
 git commit -m "Load media library from /api/media instead of hard-coded data"
+
+## Chunk 7: Year and Description in the Detail View
+
+### What we did
+- Added `year` and `description` columns to the `media` table.
+- Updated the sample data with values for those columns.
+- Modified the `/api/media` query and response to include the new fields.
+- Updated the detail panel (HTML + JS + CSS) to display them.
+
+### Key learning notes
+- `ALTER TABLE` lets us add columns without recreating the table.
+- The frontend only needs to read the extra properties that now arrive from the API.
+- We kept the changes small so the existing search and category rows continue to work.
+
+### Commit
+```bash
+git add server.js index.html js/app.js css/styles.css DEVELOPMENT.md
+git commit -m "Add year and description fields to media and detail view"

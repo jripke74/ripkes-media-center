@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname)));
 app.get("/api/media", async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, title, type, image, category FROM media ORDER BY category, title",
+      "SELECT id, title, type, image, category, year, description FROM media ORDER BY category, title",
     );
 
     // Group flat rows into the category structure the frontend uses
@@ -37,6 +37,8 @@ app.get("/api/media", async (req, res) => {
         title: row.title,
         type: row.type,
         image: row.image,
+        year: row.year,
+        description: row.description,
       });
     });
 

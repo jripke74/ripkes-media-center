@@ -66,6 +66,8 @@ function openDetail(item) {
   document.getElementById("detail-image").alt = item.title;
   document.getElementById("detail-title").textContent = item.title;
   document.getElementById("detail-type").textContent = item.type || "";
+  document.getElementById("detail-year").textContent = item.year ? `Year: ${item.year}` : "";
+  document.getElementById("detail-description").textContent = item.description || "";
   document.getElementById("detail-overlay").classList.remove("hidden");
 }
 

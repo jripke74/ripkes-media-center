@@ -271,3 +271,19 @@ body.dark .footer {
 .category-row.hidden {
   display: none;
 }
+
+#detail-year,
+#detail-description {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  color: #86868b;
+}
+
+body.dark #detail-year,
+body.dark #detail-description {
+  color: #98989d;
+}
+
+#detail-description {
+  line-height: 1.4;
+}
