@@ -244,3 +244,37 @@ git commit -m "Add basic email/password registration and login"
 ```bash
 git add server.js js/app.js css/styles.css DEVELOPMENT.md
 git commit -m "Require login to view the media library"
+
+## Chunk 10: Mobile-First Visual Refresh
+
+### What we did
+- Rewrote the CSS as mobile-first.
+- Improved header, cards, horizontal rows, and the detail/auth panels for small screens.
+- Added safe-area insets, better touch targets, and a bottom-sheet style modal on phones.
+- Larger screens get wider cards, hover effects, and a centered modal.
+
+### Commit
+```bash
+git add css/styles.css DEVELOPMENT.md
+git commit -m "Improve UI with mobile-first responsive design"
+
+## Chunk 10: Mobile-First Design & Visual Polish
+
+### What we did
+- Rewrote the CSS as mobile-first (base styles target phones, then media queries enhance for tablet and desktop).
+- Improved the overall Apple-inspired look: better spacing, typography, card shadows, backdrop blur on the header, and refined buttons.
+- Made the header stack on small screens and sit in a row on larger ones.
+- Cards are smaller on mobile and grow on bigger screens.
+- Touch-friendly targets and smoother scrolling.
+- Polished the detail panel, login prompt, and footer.
+
+### Key learning notes
+- Mobile-first means writing the default styles for small screens, then using `@media (min-width: …)` to add enhancements.
+- CSS custom properties (variables) make theming and dark mode much easier.
+- `backdrop-filter` gives the sticky header a modern frosted-glass look (supported in modern browsers).
+- Horizontal scrollers work especially well on touch devices.
+
+### Commit
+```bash
+git add css/styles.css index.html DEVELOPMENT.md
+git commit -m "Make design mobile-first and improve visual polish"

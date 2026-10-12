@@ -1,6 +1,8 @@
-// Ripke’s Media Center – Chunk 5: Load media from the API
+// Ripke’s Media Center – Frontend
+// Loads media from API, handles auth, search, detail view, theme, and mobile menu.
 
-let mediaCategories = []; // filled by the API
+let mediaCategories = [];
+let isLoginMode = true;
 
 function createMediaCard(item) {
   const card = document.createElement("div");
@@ -21,7 +23,7 @@ function renderCategoryRows() {
   const container = document.getElementById("library");
   container.innerHTML = "";
 
-  mediaCategories.forEach((category) => {
+  mediaCategories.forEach(category => {
     const section = document.createElement("section");
     section.className = "category-row";
 
@@ -32,7 +34,7 @@ function renderCategoryRows() {
     const scroller = document.createElement("div");
     scroller.className = "row-scroller";
 
-    category.items.forEach((item) => {
+    category.items.forEach(item => {
       scroller.appendChild(createMediaCard(item));
     });
 
@@ -45,13 +47,14 @@ function filterMedia(query) {
   const q = query.toLowerCase().trim();
   const rows = document.querySelectorAll(".category-row");
 
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const cards = row.querySelectorAll(".media-card");
     let visibleCount = 0;
 
-    cards.forEach((card) => {
-      const matches =
-        !q || card.dataset.title.includes(q) || card.dataset.type.includes(q);
+    cards.forEach(card => {
+      const matches = !q ||
+        card.dataset.title.includes(q) ||
+        card.dataset.type.includes(q);
       card.style.display = matches ? "" : "none";
       if (matches) visibleCount++;
     });
@@ -65,116 +68,13 @@ function openDetail(item) {
   document.getElementById("detail-image").alt = item.title;
   document.getElementById("detail-title").textContent = item.title;
   document.getElementById("detail-type").textContent = item.type || "";
-  document.getElementById("detail-year").textContent = item.year
-    ? `Year: ${item.year}`
-    : "";
-  document.getElementById("detail-description").textContent =
-    item.description || "";
+  document.getElementById("detail-year").textContent = item.year ? `Year: ${item.year}` : "";
+  document.getElementById("detail-description").textContent = item.description || "";
   document.getElementById("detail-overlay").classList.remove("hidden");
 }
 
 function closeDetail() {
   document.getElementById("detail-overlay").classList.add("hidden");
-}
-
-let isLoginMode = true;
-
-function showAuthModal() {
-  document.getElementById("auth-overlay").classList.remove("hidden");
-  document.getElementById("auth-message").textContent = "";
-}
-
-function hideAuthModal() {
-  document.getElementById("auth-overlay").classList.add("hidden");
-}
-
-function updateAuthUI(user) {
-  const authArea = document.getElementById("auth-area");
-  if (user && user.loggedIn) {
-    authArea.innerHTML = `
-      <span>${user.email}</span>
-      <button id="logout-btn" class="auth-btn">Log out</button>
-    `;
-    document.getElementById("logout-btn").addEventListener("click", logout);
-  } else {
-    authArea.innerHTML = `<button id="show-login" class="auth-btn">Log in</button>`;
-    document
-      .getElementById("show-login")
-      .addEventListener("click", showAuthModal);
-  }
-}
-
-async function checkAuth() {
-  try {
-    const res = await fetch("/api/me");
-    const data = await res.json();
-    updateAuthUI(data);
-    loadMedia(); // refresh the library based on login state
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-async function handleAuthSubmit(e) {
-  e.preventDefault();
-  const email = document.getElementById("auth-email").value;
-  const password = document.getElementById("auth-password").value;
-  const endpoint = isLoginMode ? "/api/login" : "/api/register";
-
-  try {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      document.getElementById("auth-message").textContent =
-        data.error || "Something went wrong";
-      return;
-    }
-    hideAuthModal();
-    checkAuth();
-  } catch (err) {
-    document.getElementById("auth-message").textContent = "Network error";
-  }
-}
-
-async function logout() {
-  await fetch("/api/logout", { method: "POST" });
-  checkAuth();
-}
-
-function setupAuth() {
-  document
-    .getElementById("show-login")
-    ?.addEventListener("click", showAuthModal);
-  document
-    .getElementById("auth-close")
-    .addEventListener("click", hideAuthModal);
-  document.getElementById("auth-overlay").addEventListener("click", (e) => {
-    if (e.target.id === "auth-overlay") hideAuthModal();
-  });
-  document
-    .getElementById("auth-form")
-    .addEventListener("submit", handleAuthSubmit);
-
-  document.getElementById("toggle-auth-mode").addEventListener("click", (e) => {
-    e.preventDefault();
-    isLoginMode = !isLoginMode;
-    document.getElementById("auth-title").textContent = isLoginMode
-      ? "Log in"
-      : "Register";
-    document.getElementById("toggle-auth-text").innerHTML = isLoginMode
-      ? 'Need an account? <a href="#" id="toggle-auth-mode">Register</a>'
-      : 'Already have an account? <a href="#" id="toggle-auth-mode">Log in</a>';
-    // re-bind the new link
-    document
-      .getElementById("toggle-auth-mode")
-      .addEventListener("click", arguments.callee);
-  });
-
-  checkAuth();
 }
 
 function setupThemeToggle() {
@@ -184,15 +84,17 @@ function setupThemeToggle() {
   const savedTheme = localStorage.getItem("theme");
   if (savedTheme === "dark") {
     body.classList.add("dark");
-    toggle.textContent = "☀️";
+    if (toggle) toggle.textContent = "☀️";
   }
 
-  toggle.addEventListener("click", () => {
-    body.classList.toggle("dark");
-    const isDark = body.classList.contains("dark");
-    toggle.textContent = isDark ? "☀️" : "🌙";
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-  });
+  if (toggle) {
+    toggle.addEventListener("click", () => {
+      body.classList.toggle("dark");
+      const isDark = body.classList.contains("dark");
+      toggle.textContent = isDark ? "☀️" : "🌙";
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    });
+  }
 }
 
 function setCurrentYear() {
@@ -225,6 +127,17 @@ function setupDetail() {
   }
 }
 
+function setupMenuToggle() {
+  const toggle = document.getElementById("menu-toggle");
+  const menu = document.getElementById("header-menu");
+  if (!toggle || !menu) return;
+
+  toggle.addEventListener("click", () => {
+    menu.classList.toggle("open");
+    toggle.textContent = menu.classList.contains("open") ? "✕" : "☰";
+  });
+}
+
 async function loadMedia() {
   try {
     const response = await fetch("/api/media");
@@ -236,9 +149,8 @@ async function loadMedia() {
           <button id="prompt-login" class="auth-btn">Log in</button>
         </div>
       `;
-      document
-        .getElementById("prompt-login")
-        .addEventListener("click", showAuthModal);
+      const promptBtn = document.getElementById("prompt-login");
+      if (promptBtn) promptBtn.addEventListener("click", showAuthModal);
       return;
     }
     if (!response.ok) throw new Error("Failed to load media");
@@ -253,10 +165,106 @@ async function loadMedia() {
   }
 }
 
+function showAuthModal() {
+  document.getElementById("auth-overlay").classList.remove("hidden");
+  document.getElementById("auth-message").textContent = "";
+}
+
+function hideAuthModal() {
+  document.getElementById("auth-overlay").classList.add("hidden");
+}
+
+function updateAuthUI(user) {
+  const authArea = document.getElementById("auth-area");
+  if (!authArea) return;
+
+  if (user && user.loggedIn) {
+    authArea.innerHTML = `
+      <span>${user.email}</span>
+      <button id="logout-btn" class="auth-btn">Log out</button>
+    `;
+    document.getElementById("logout-btn").addEventListener("click", logout);
+  } else {
+    authArea.innerHTML = `<button id="show-login" class="auth-btn">Log in</button>`;
+    document.getElementById("show-login").addEventListener("click", showAuthModal);
+  }
+}
+
+async function checkAuth() {
+  try {
+    const res = await fetch("/api/me");
+    const data = await res.json();
+    updateAuthUI(data);
+    loadMedia();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  const email = document.getElementById("auth-email").value;
+  const password = document.getElementById("auth-password").value;
+  const endpoint = isLoginMode ? "/api/login" : "/api/register";
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById("auth-message").textContent = data.error || "Something went wrong";
+      return;
+    }
+    hideAuthModal();
+    checkAuth();
+  } catch (err) {
+    document.getElementById("auth-message").textContent = "Network error";
+  }
+}
+
+async function logout() {
+  await fetch("/api/logout", { method: "POST" });
+  checkAuth();
+}
+
+function setupAuth() {
+  const closeBtn = document.getElementById("auth-close");
+  const overlay = document.getElementById("auth-overlay");
+  const form = document.getElementById("auth-form");
+  const toggleLink = document.getElementById("toggle-auth-mode");
+
+  if (closeBtn) closeBtn.addEventListener("click", hideAuthModal);
+  if (overlay) {
+    overlay.addEventListener("click", (e) => {
+      if (e.target.id === "auth-overlay") hideAuthModal();
+    });
+  }
+  if (form) form.addEventListener("submit", handleAuthSubmit);
+
+  if (toggleLink) {
+    toggleLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      isLoginMode = !isLoginMode;
+      document.getElementById("auth-title").textContent = isLoginMode ? "Log in" : "Register";
+      document.getElementById("auth-toggle-text").innerHTML = isLoginMode
+        ? 'Need an account? <a href="#" id="toggle-auth-mode">Register</a>'
+        : 'Already have an account? <a href="#" id="toggle-auth-mode">Log in</a>';
+      // Re-bind the new link
+      document.getElementById("toggle-auth-mode").addEventListener("click", arguments.callee);
+    });
+  }
+
+  checkAuth();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setupThemeToggle();
   setCurrentYear();
   setupSearch();
   setupDetail();
-  setupAuth(); // this calls checkAuth → loadMedia
+  setupMenuToggle();
+  setupAuth();
 });
