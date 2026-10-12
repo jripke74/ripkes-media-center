@@ -21,7 +21,7 @@ function renderCategoryRows() {
   const container = document.getElementById("library");
   container.innerHTML = "";
 
-  mediaCategories.forEach(category => {
+  mediaCategories.forEach((category) => {
     const section = document.createElement("section");
     section.className = "category-row";
 
@@ -32,7 +32,7 @@ function renderCategoryRows() {
     const scroller = document.createElement("div");
     scroller.className = "row-scroller";
 
-    category.items.forEach(item => {
+    category.items.forEach((item) => {
       scroller.appendChild(createMediaCard(item));
     });
 
@@ -45,14 +45,13 @@ function filterMedia(query) {
   const q = query.toLowerCase().trim();
   const rows = document.querySelectorAll(".category-row");
 
-  rows.forEach(row => {
+  rows.forEach((row) => {
     const cards = row.querySelectorAll(".media-card");
     let visibleCount = 0;
 
-    cards.forEach(card => {
-      const matches = !q ||
-        card.dataset.title.includes(q) ||
-        card.dataset.type.includes(q);
+    cards.forEach((card) => {
+      const matches =
+        !q || card.dataset.title.includes(q) || card.dataset.type.includes(q);
       card.style.display = matches ? "" : "none";
       if (matches) visibleCount++;
     });
@@ -66,13 +65,115 @@ function openDetail(item) {
   document.getElementById("detail-image").alt = item.title;
   document.getElementById("detail-title").textContent = item.title;
   document.getElementById("detail-type").textContent = item.type || "";
-  document.getElementById("detail-year").textContent = item.year ? `Year: ${item.year}` : "";
-  document.getElementById("detail-description").textContent = item.description || "";
+  document.getElementById("detail-year").textContent = item.year
+    ? `Year: ${item.year}`
+    : "";
+  document.getElementById("detail-description").textContent =
+    item.description || "";
   document.getElementById("detail-overlay").classList.remove("hidden");
 }
 
 function closeDetail() {
   document.getElementById("detail-overlay").classList.add("hidden");
+}
+
+let isLoginMode = true;
+
+function showAuthModal() {
+  document.getElementById("auth-overlay").classList.remove("hidden");
+  document.getElementById("auth-message").textContent = "";
+}
+
+function hideAuthModal() {
+  document.getElementById("auth-overlay").classList.add("hidden");
+}
+
+function updateAuthUI(user) {
+  const authArea = document.getElementById("auth-area");
+  if (user && user.loggedIn) {
+    authArea.innerHTML = `
+      <span>${user.email}</span>
+      <button id="logout-btn" class="auth-btn">Log out</button>
+    `;
+    document.getElementById("logout-btn").addEventListener("click", logout);
+  } else {
+    authArea.innerHTML = `<button id="show-login" class="auth-btn">Log in</button>`;
+    document
+      .getElementById("show-login")
+      .addEventListener("click", showAuthModal);
+  }
+}
+
+async function checkAuth() {
+  try {
+    const res = await fetch("/api/me");
+    const data = await res.json();
+    updateAuthUI(data);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function handleAuthSubmit(e) {
+  e.preventDefault();
+  const email = document.getElementById("auth-email").value;
+  const password = document.getElementById("auth-password").value;
+  const endpoint = isLoginMode ? "/api/login" : "/api/register";
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById("auth-message").textContent =
+        data.error || "Something went wrong";
+      return;
+    }
+    hideAuthModal();
+    checkAuth();
+  } catch (err) {
+    document.getElementById("auth-message").textContent = "Network error";
+  }
+}
+
+async function logout() {
+  await fetch("/api/logout", { method: "POST" });
+  checkAuth();
+}
+
+function setupAuth() {
+  document
+    .getElementById("show-login")
+    ?.addEventListener("click", showAuthModal);
+  document
+    .getElementById("auth-close")
+    .addEventListener("click", hideAuthModal);
+  document.getElementById("auth-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "auth-overlay") hideAuthModal();
+  });
+  document
+    .getElementById("auth-form")
+    .addEventListener("submit", handleAuthSubmit);
+
+  document.getElementById("toggle-auth-mode").addEventListener("click", (e) => {
+    e.preventDefault();
+    isLoginMode = !isLoginMode;
+    document.getElementById("auth-title").textContent = isLoginMode
+      ? "Log in"
+      : "Register";
+    document.getElementById("toggle-auth-text").innerHTML = isLoginMode
+      ? 'Need an account? <a href="#" id="toggle-auth-mode">Register</a>'
+      : 'Already have an account? <a href="#" id="toggle-auth-mode">Log in</a>';
+    // re-bind the new link
+    document
+      .getElementById("toggle-auth-mode")
+      .addEventListener("click", arguments.callee);
+  });
+
+  checkAuth();
 }
 
 function setupThemeToggle() {
@@ -133,7 +234,8 @@ async function loadMedia() {
     console.error(err);
     const container = document.getElementById("library");
     if (container) {
-      container.innerHTML = "<p>Could not load the media library. Is the server running?</p>";
+      container.innerHTML =
+        "<p>Could not load the media library. Is the server running?</p>";
     }
   }
 }
@@ -143,5 +245,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setCurrentYear();
   setupSearch();
   setupDetail();
+  setupAuth();
   loadMedia(); // fetch and render
 });

@@ -287,3 +287,30 @@ body.dark #detail-description {
 #detail-description {
   line-height: 1.4;
 }
+
+.auth-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+#auth-form input {
+  display: block;
+  width: 100%;
+  margin: 0.5rem 0;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+#auth-message {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: #ff3b30;
+}

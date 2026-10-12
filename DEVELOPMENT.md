@@ -206,3 +206,23 @@ git commit -m "Load media library from /api/media instead of hard-coded data"
 ```bash
 git add server.js index.html js/app.js css/styles.css DEVELOPMENT.md
 git commit -m "Add year and description fields to media and detail view"
+
+## Chunk 8: Basic Email/Password Authentication
+
+### What we did
+- Created a `users` table.
+- Added register, login, logout, and “who am I” API endpoints.
+- Used bcrypt to hash passwords and express-session for login state.
+- Added a simple login/register modal in the header.
+- The media library continues to work for everyone (we have not locked it down yet).
+
+### Key learning notes
+- Passwords are never stored in plain text; bcrypt creates a one-way hash.
+- Sessions keep the user logged in across page refreshes (cookie stored by the browser).
+- The secret in the session config should be changed to a long random string before any real deployment.
+- Registration and login share the same form; a small flag switches the mode.
+
+### Commit
+```bash
+git add server.js index.html js/app.js css/styles.css package.json DEVELOPMENT.md
+git commit -m "Add basic email/password registration and login"
