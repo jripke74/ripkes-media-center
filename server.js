@@ -1,4 +1,4 @@
-// Ripke’s Media Center – Chunk 8: Basic authentication
+// Ripke’s Media Center – Chunk 11: Basic video playback
 
 const express = require("express");
 const path = require("path");
@@ -19,6 +19,17 @@ const pool = new Pool({
 });
 
 // Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: "change-this-to-a-long-random-string-later",
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false }
+}));
+
+app.use(express.static(path.join(__dirname)));
+
 function requireLogin(req, res, next) {
   if (req.session.userId) {
     return next();
@@ -26,21 +37,7 @@ function requireLogin(req, res, next) {
   res.status(401).json({ error: "Please log in" });
 }
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(
-  session({
-    secret: "change-this-to-a-long-random-string-later",
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false }, // set to true when you use HTTPS on Heroku
-  }),
-);
-
-// Serve static files
-app.use(express.static(path.join(__dirname)));
-
-// ----- Auth routes -----
+// Auth routes
 app.post("/api/register", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -51,17 +48,13 @@ app.post("/api/register", async (req, res) => {
     const password_hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
       "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email",
-      [email, password_hash],
+      [email, password_hash]
     );
     req.session.userId = result.rows[0].id;
     req.session.email = result.rows[0].email;
-    res.json({
-      message: "Registered and logged in",
-      email: result.rows[0].email,
-    });
+    res.json({ message: "Registered and logged in", email: result.rows[0].email });
   } catch (err) {
     if (err.code === "23505") {
-      // unique violation
       return res.status(400).json({ error: "Email already exists" });
     }
     console.error(err);
@@ -76,9 +69,7 @@ app.post("/api/login", async (req, res) => {
   }
 
   try {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     const user = result.rows[0];
     if (!user) {
       return res.status(401).json({ error: "Invalid email or password" });
@@ -112,15 +103,15 @@ app.get("/api/me", (req, res) => {
   }
 });
 
-// ----- Media route (unchanged from Chunk 7) -----
+// Media route (includes video_url)
 app.get("/api/media", requireLogin, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, title, type, image, category, year, description FROM media ORDER BY category, title",
+      "SELECT id, title, type, image, category, year, description, video_url FROM media ORDER BY category, title"
     );
 
     const categoriesMap = {};
-    result.rows.forEach((row) => {
+    result.rows.forEach(row => {
       if (!categoriesMap[row.category]) {
         categoriesMap[row.category] = { title: row.category, items: [] };
       }
@@ -131,6 +122,7 @@ app.get("/api/media", requireLogin, async (req, res) => {
         image: row.image,
         year: row.year,
         description: row.description,
+        video_url: row.video_url
       });
     });
 
@@ -141,7 +133,7 @@ app.get("/api/media", requireLogin, async (req, res) => {
   }
 });
 
-// Fallback for the frontend
+// Fallback
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });

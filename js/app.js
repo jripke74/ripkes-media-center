@@ -23,7 +23,7 @@ function renderCategoryRows() {
   const container = document.getElementById("library");
   container.innerHTML = "";
 
-  mediaCategories.forEach(category => {
+  mediaCategories.forEach((category) => {
     const section = document.createElement("section");
     section.className = "category-row";
 
@@ -34,7 +34,7 @@ function renderCategoryRows() {
     const scroller = document.createElement("div");
     scroller.className = "row-scroller";
 
-    category.items.forEach(item => {
+    category.items.forEach((item) => {
       scroller.appendChild(createMediaCard(item));
     });
 
@@ -47,14 +47,13 @@ function filterMedia(query) {
   const q = query.toLowerCase().trim();
   const rows = document.querySelectorAll(".category-row");
 
-  rows.forEach(row => {
+  rows.forEach((row) => {
     const cards = row.querySelectorAll(".media-card");
     let visibleCount = 0;
 
-    cards.forEach(card => {
-      const matches = !q ||
-        card.dataset.title.includes(q) ||
-        card.dataset.type.includes(q);
+    cards.forEach((card) => {
+      const matches =
+        !q || card.dataset.title.includes(q) || card.dataset.type.includes(q);
       card.style.display = matches ? "" : "none";
       if (matches) visibleCount++;
     });
@@ -64,12 +63,53 @@ function filterMedia(query) {
 }
 
 function openDetail(item) {
-  document.getElementById("detail-image").src = item.image;
-  document.getElementById("detail-image").alt = item.title;
+  const img = document.getElementById("detail-image");
+  const video = document.getElementById("detail-video");
+  const playBtn = document.getElementById("detail-play");
+
   document.getElementById("detail-title").textContent = item.title;
   document.getElementById("detail-type").textContent = item.type || "";
-  document.getElementById("detail-year").textContent = item.year ? `Year: ${item.year}` : "";
-  document.getElementById("detail-description").textContent = item.description || "";
+  document.getElementById("detail-year").textContent = item.year
+    ? `Year: ${item.year}`
+    : "";
+  document.getElementById("detail-description").textContent =
+    item.description || "";
+
+  // Reset
+  video.pause();
+  video.style.display = "none";
+  video.src = "";
+  img.style.display = "block";
+
+  if (item.video_url) {
+    img.style.display = "none";
+    video.style.display = "block";
+    video.src = item.video_url;
+    video.load();
+
+    video.onerror = () => {
+      video.style.display = "none";
+      img.style.display = "block";
+      img.src = item.image;
+      alert("Could not load the video. The URL may be blocked or invalid.");
+    };
+
+    playBtn.textContent = "▶ Play Video";
+    playBtn.onclick = () => {
+      video.play().catch((err) => {
+        console.error(err);
+        alert("Playback failed. Try again or check the console.");
+      });
+    };
+  } else {
+    img.src = item.image;
+    img.alt = item.title;
+    playBtn.textContent = "▶ Play";
+    playBtn.onclick = () => {
+      alert("No video available for this item yet.");
+    };
+  }
+
   document.getElementById("detail-overlay").classList.remove("hidden");
 }
 
@@ -186,7 +226,9 @@ function updateAuthUI(user) {
     document.getElementById("logout-btn").addEventListener("click", logout);
   } else {
     authArea.innerHTML = `<button id="show-login" class="auth-btn">Log in</button>`;
-    document.getElementById("show-login").addEventListener("click", showAuthModal);
+    document
+      .getElementById("show-login")
+      .addEventListener("click", showAuthModal);
   }
 }
 
@@ -211,11 +253,12 @@ async function handleAuthSubmit(e) {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
     if (!res.ok) {
-      document.getElementById("auth-message").textContent = data.error || "Something went wrong";
+      document.getElementById("auth-message").textContent =
+        data.error || "Something went wrong";
       return;
     }
     hideAuthModal();
@@ -248,12 +291,15 @@ function setupAuth() {
     toggleLink.addEventListener("click", (e) => {
       e.preventDefault();
       isLoginMode = !isLoginMode;
-      document.getElementById("auth-title").textContent = isLoginMode ? "Log in" : "Register";
+      document.getElementById("auth-title").textContent = isLoginMode
+        ? "Log in"
+        : "Register";
       document.getElementById("auth-toggle-text").innerHTML = isLoginMode
         ? 'Need an account? <a href="#" id="toggle-auth-mode">Register</a>'
         : 'Already have an account? <a href="#" id="toggle-auth-mode">Log in</a>';
-      // Re-bind the new link
-      document.getElementById("toggle-auth-mode").addEventListener("click", arguments.callee);
+      document
+        .getElementById("toggle-auth-mode")
+        .addEventListener("click", arguments.callee);
     });
   }
 

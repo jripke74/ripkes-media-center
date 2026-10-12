@@ -278,3 +278,23 @@ git commit -m "Improve UI with mobile-first responsive design"
 ```bash
 git add css/styles.css index.html DEVELOPMENT.md
 git commit -m "Make design mobile-first and improve visual polish"
+
+## Chunk 11: Basic Video Playback
+
+### What we did
+- Added a `video_url` column to the `media` table.
+- Updated the API to return the new field.
+- Added an HTML5 `<video>` element to the detail panel.
+- When an item has a `video_url`, the panel shows the video player instead of the poster image.
+- The Play button starts the video.
+
+### Key learning notes
+- HTML5 `<video controls>` gives a full player with play/pause, volume, and fullscreen.
+- We hide the image and show the video only when a URL is present.
+- Sample public MP4s were used so you can test without hosting your own files yet.
+- Later we can support more formats, add subtitles, or stream from your own storage.
+
+### Commit
+```bash
+git add server.js index.html js/app.js DEVELOPMENT.md
+git commit -m "Add basic HTML5 video playback in the detail panel"
