@@ -314,3 +314,21 @@ body.dark #detail-description {
   font-size: 0.9rem;
   color: #ff3b30;
 }
+
+.login-prompt {
+  text-align: center;
+  padding: 4rem 1rem;
+}
+
+.login-prompt h2 {
+  margin-bottom: 0.5rem;
+}
+
+.login-prompt p {
+  margin-bottom: 1.5rem;
+  color: #86868b;
+}
+
+body.dark .login-prompt p {
+  color: #98989d;
+}

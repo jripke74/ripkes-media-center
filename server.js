@@ -19,6 +19,13 @@ const pool = new Pool({
 });
 
 // Middleware
+function requireLogin(req, res, next) {
+  if (req.session.userId) {
+    return next();
+  }
+  res.status(401).json({ error: "Please log in" });
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
@@ -106,7 +113,7 @@ app.get("/api/me", (req, res) => {
 });
 
 // ----- Media route (unchanged from Chunk 7) -----
-app.get("/api/media", async (req, res) => {
+app.get("/api/media", requireLogin, async (req, res) => {
   try {
     const result = await pool.query(
       "SELECT id, title, type, image, category, year, description FROM media ORDER BY category, title",

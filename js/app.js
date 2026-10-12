@@ -109,6 +109,7 @@ async function checkAuth() {
     const res = await fetch("/api/me");
     const data = await res.json();
     updateAuthUI(data);
+    loadMedia(); // refresh the library based on login state
   } catch (err) {
     console.error(err);
   }
@@ -227,6 +228,19 @@ function setupDetail() {
 async function loadMedia() {
   try {
     const response = await fetch("/api/media");
+    if (response.status === 401) {
+      document.getElementById("library").innerHTML = `
+        <div class="login-prompt">
+          <h2>Please log in</h2>
+          <p>Log in or create an account to view your media library.</p>
+          <button id="prompt-login" class="auth-btn">Log in</button>
+        </div>
+      `;
+      document
+        .getElementById("prompt-login")
+        .addEventListener("click", showAuthModal);
+      return;
+    }
     if (!response.ok) throw new Error("Failed to load media");
     mediaCategories = await response.json();
     renderCategoryRows();
@@ -234,8 +248,7 @@ async function loadMedia() {
     console.error(err);
     const container = document.getElementById("library");
     if (container) {
-      container.innerHTML =
-        "<p>Could not load the media library. Is the server running?</p>";
+      container.innerHTML = "<p>Could not load the media library.</p>";
     }
   }
 }
@@ -245,6 +258,5 @@ document.addEventListener("DOMContentLoaded", () => {
   setCurrentYear();
   setupSearch();
   setupDetail();
-  setupAuth();
-  loadMedia(); // fetch and render
+  setupAuth(); // this calls checkAuth → loadMedia
 });

@@ -226,3 +226,21 @@ git commit -m "Add year and description fields to media and detail view"
 ```bash
 git add server.js index.html js/app.js css/styles.css package.json DEVELOPMENT.md
 git commit -m "Add basic email/password registration and login"
+
+## Chunk 9: Protect the Media Library
+
+### What we did
+- Added a `requireLogin` middleware that checks for a session.
+- Applied it to the `/api/media` route so the API returns 401 if the user is not logged in.
+- Updated the frontend so a 401 response shows a friendly “Please log in” prompt instead of the library.
+- After login or logout the library automatically refreshes.
+
+### Key learning notes
+- Middleware in Express is just a function that can stop a request or pass it along with `next()`.
+- The frontend treats a 401 status as “not authorized” and shows the right UI.
+- Sessions still keep the user logged in across refreshes.
+
+### Commit
+```bash
+git add server.js js/app.js css/styles.css DEVELOPMENT.md
+git commit -m "Require login to view the media library"
