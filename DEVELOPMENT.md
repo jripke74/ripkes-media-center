@@ -298,3 +298,22 @@ git commit -m "Make design mobile-first and improve visual polish"
 ```bash
 git add server.js index.html js/app.js DEVELOPMENT.md
 git commit -m "Add basic HTML5 video playback in the detail panel"
+
+## Chunk 12: Basic Audio Playback
+
+### What we did
+- Added an `audio_url` column to the `media` table.
+- Updated the API to return the new field.
+- Added an HTML5 `<audio>` element to the detail panel.
+- The detail panel now shows a video player, an audio player, or the poster image depending on what is available.
+
+### Key learning notes
+- HTML5 `<audio controls>` works the same way as `<video>` for music.
+- We check for `video_url` first, then `audio_url`, then fall back to the image.
+- Sample public MP3s were used so you can test immediately.
+- Later we can support playlists, album art, and better audio controls.
+
+### Commit
+```bash
+git add server.js index.html js/app.js DEVELOPMENT.md
+git commit -m "Add basic HTML5 audio playback for music items"

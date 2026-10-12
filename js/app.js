@@ -65,20 +65,21 @@ function filterMedia(query) {
 function openDetail(item) {
   const img = document.getElementById("detail-image");
   const video = document.getElementById("detail-video");
+  const audio = document.getElementById("detail-audio");
   const playBtn = document.getElementById("detail-play");
 
   document.getElementById("detail-title").textContent = item.title;
   document.getElementById("detail-type").textContent = item.type || "";
-  document.getElementById("detail-year").textContent = item.year
-    ? `Year: ${item.year}`
-    : "";
-  document.getElementById("detail-description").textContent =
-    item.description || "";
+  document.getElementById("detail-year").textContent = item.year ? `Year: ${item.year}` : "";
+  document.getElementById("detail-description").textContent = item.description || "";
 
-  // Reset
+  // Reset everything
   video.pause();
+  audio.pause();
   video.style.display = "none";
+  audio.style.display = "none";
   video.src = "";
+  audio.src = "";
   img.style.display = "block";
 
   if (item.video_url) {
@@ -86,28 +87,19 @@ function openDetail(item) {
     video.style.display = "block";
     video.src = item.video_url;
     video.load();
-
-    video.onerror = () => {
-      video.style.display = "none";
-      img.style.display = "block";
-      img.src = item.image;
-      alert("Could not load the video. The URL may be blocked or invalid.");
-    };
-
     playBtn.textContent = "▶ Play Video";
-    playBtn.onclick = () => {
-      video.play().catch((err) => {
-        console.error(err);
-        alert("Playback failed. Try again or check the console.");
-      });
-    };
+    playBtn.onclick = () => video.play().catch(() => alert("Could not play video"));
+  } else if (item.audio_url) {
+    audio.style.display = "block";
+    audio.src = item.audio_url;
+    audio.load();
+    playBtn.textContent = "▶ Play Audio";
+    playBtn.onclick = () => audio.play().catch(() => alert("Could not play audio"));
   } else {
     img.src = item.image;
     img.alt = item.title;
     playBtn.textContent = "▶ Play";
-    playBtn.onclick = () => {
-      alert("No video available for this item yet.");
-    };
+    playBtn.onclick = () => alert("No media available for this item yet.");
   }
 
   document.getElementById("detail-overlay").classList.remove("hidden");
