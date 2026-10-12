@@ -1,0 +1,21 @@
+{
+  "name": "ripkes-media-center",
+  "version": "0.1.0",
+  "description": "Ripke’s Media Center – learning project",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "media",
+    "center",
+    "learning"
+  ],
+  "author": "Jeff Ripke",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.3.0",
+    "pg": "^8.23.1"
+  }
+}
