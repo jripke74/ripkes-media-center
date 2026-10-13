@@ -18,4 +18,3 @@ Frontend only – basic media grid with light/dark theme.
 - Architecture: MVC + modular
 
 See `DEVELOPMENT.md` for the step-by-step learning notes.
-# ripkes-media-center

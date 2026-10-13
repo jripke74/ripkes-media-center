@@ -23,7 +23,7 @@ function renderCategoryRows() {
   const container = document.getElementById("library");
   container.innerHTML = "";
 
-  mediaCategories.forEach((category) => {
+  mediaCategories.forEach(category => {
     const section = document.createElement("section");
     section.className = "category-row";
 
@@ -34,7 +34,7 @@ function renderCategoryRows() {
     const scroller = document.createElement("div");
     scroller.className = "row-scroller";
 
-    category.items.forEach((item) => {
+    category.items.forEach(item => {
       scroller.appendChild(createMediaCard(item));
     });
 
@@ -47,13 +47,14 @@ function filterMedia(query) {
   const q = query.toLowerCase().trim();
   const rows = document.querySelectorAll(".category-row");
 
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const cards = row.querySelectorAll(".media-card");
     let visibleCount = 0;
 
-    cards.forEach((card) => {
-      const matches =
-        !q || card.dataset.title.includes(q) || card.dataset.type.includes(q);
+    cards.forEach(card => {
+      const matches = !q ||
+        card.dataset.title.includes(q) ||
+        card.dataset.type.includes(q);
       card.style.display = matches ? "" : "none";
       if (matches) visibleCount++;
     });
@@ -65,7 +66,6 @@ function filterMedia(query) {
 function openDetail(item) {
   const img = document.getElementById("detail-image");
   const video = document.getElementById("detail-video");
-  const audio = document.getElementById("detail-audio");
   const playBtn = document.getElementById("detail-play");
 
   document.getElementById("detail-title").textContent = item.title;
@@ -73,33 +73,27 @@ function openDetail(item) {
   document.getElementById("detail-year").textContent = item.year ? `Year: ${item.year}` : "";
   document.getElementById("detail-description").textContent = item.description || "";
 
-  // Reset everything
+  // Reset previous video
   video.pause();
-  audio.pause();
   video.style.display = "none";
-  audio.style.display = "none";
   video.src = "";
-  audio.src = "";
   img.style.display = "block";
 
   if (item.video_url) {
     img.style.display = "none";
     video.style.display = "block";
     video.src = item.video_url;
-    video.load();
     playBtn.textContent = "▶ Play Video";
-    playBtn.onclick = () => video.play().catch(() => alert("Could not play video"));
-  } else if (item.audio_url) {
-    audio.style.display = "block";
-    audio.src = item.audio_url;
-    audio.load();
-    playBtn.textContent = "▶ Play Audio";
-    playBtn.onclick = () => audio.play().catch(() => alert("Could not play audio"));
+    playBtn.onclick = () => {
+      video.play();
+    };
   } else {
     img.src = item.image;
     img.alt = item.title;
     playBtn.textContent = "▶ Play";
-    playBtn.onclick = () => alert("No media available for this item yet.");
+    playBtn.onclick = () => {
+      alert("No video available for this item yet.");
+    };
   }
 
   document.getElementById("detail-overlay").classList.remove("hidden");
@@ -218,9 +212,7 @@ function updateAuthUI(user) {
     document.getElementById("logout-btn").addEventListener("click", logout);
   } else {
     authArea.innerHTML = `<button id="show-login" class="auth-btn">Log in</button>`;
-    document
-      .getElementById("show-login")
-      .addEventListener("click", showAuthModal);
+    document.getElementById("show-login").addEventListener("click", showAuthModal);
   }
 }
 
@@ -245,12 +237,11 @@ async function handleAuthSubmit(e) {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password })
     });
     const data = await res.json();
     if (!res.ok) {
-      document.getElementById("auth-message").textContent =
-        data.error || "Something went wrong";
+      document.getElementById("auth-message").textContent = data.error || "Something went wrong";
       return;
     }
     hideAuthModal();
@@ -283,15 +274,11 @@ function setupAuth() {
     toggleLink.addEventListener("click", (e) => {
       e.preventDefault();
       isLoginMode = !isLoginMode;
-      document.getElementById("auth-title").textContent = isLoginMode
-        ? "Log in"
-        : "Register";
+      document.getElementById("auth-title").textContent = isLoginMode ? "Log in" : "Register";
       document.getElementById("auth-toggle-text").innerHTML = isLoginMode
         ? 'Need an account? <a href="#" id="toggle-auth-mode">Register</a>'
         : 'Already have an account? <a href="#" id="toggle-auth-mode">Log in</a>';
-      document
-        .getElementById("toggle-auth-mode")
-        .addEventListener("click", arguments.callee);
+      document.getElementById("toggle-auth-mode").addEventListener("click", arguments.callee);
     });
   }
 
