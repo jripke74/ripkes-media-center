@@ -22,6 +22,22 @@
 
   <main>
     <div id="library"></div>
+
+    <section id="add-media-section" class="add-media hidden">
+      <h2>Add New Media</h2>
+      <form id="add-media-form">
+        <input type="text" id="new-title" placeholder="Title" required>
+        <input type="text" id="new-type" placeholder="Type (Movie, TV, Music…)" required>
+        <input type="text" id="new-category" placeholder="Category (Movies, TV Shows, Music…)" required>
+        <input type="number" id="new-year" placeholder="Year" min="1900" max="2100">
+        <textarea id="new-description" placeholder="Description" rows="3"></textarea>
+        <input type="url" id="new-image" placeholder="Poster image URL">
+        <input type="url" id="new-video" placeholder="Video URL (optional)">
+        <input type="url" id="new-audio" placeholder="Audio URL (optional)">
+        <button type="submit" class="play-button">Add Media</button>
+      </form>
+      <p id="add-media-message"></p>
+    </section>
   </main>
 
   <div id="detail-overlay" class="detail-overlay hidden">

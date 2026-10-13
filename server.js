@@ -103,11 +103,11 @@ app.get("/api/me", (req, res) => {
   }
 });
 
-// Media route (includes video_url)
+// Media route (includes video_url and audio_url)
 app.get("/api/media", requireLogin, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, title, type, image, category, year, description, video_url FROM media ORDER BY category, title"
+      "SELECT id, title, type, image, category, year, description, video_url, audio_url FROM media ORDER BY category, title"
     );
 
     const categoriesMap = {};
@@ -122,7 +122,8 @@ app.get("/api/media", requireLogin, async (req, res) => {
         image: row.image,
         year: row.year,
         description: row.description,
-        video_url: row.video_url
+        video_url: row.video_url,
+        audio_url: row.audio_url
       });
     });
 
@@ -130,6 +131,24 @@ app.get("/api/media", requireLogin, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });
+  }
+});
+
+app.post("/api/media", requireLogin, async (req, res) => {
+  const { title, type, category, year, description, image, video_url, audio_url } = req.body;
+  if (!title || !type || !category) {
+    return res.status(400).json({ error: "Title, type, and category are required" });
+  }
+  try {
+    await pool.query(
+      `INSERT INTO media (title, type, category, year, description, image, video_url, audio_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [title, type, category, year || null, description || null, image || null, video_url || null, audio_url || null]
+    );
+    res.status(201).json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not add media" });
   }
 });
 

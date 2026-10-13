@@ -285,6 +285,65 @@ function setupAuth() {
   checkAuth();
 }
 
+function setupAddMedia() {
+  const section = document.getElementById("add-media-section");
+  const form = document.getElementById("add-media-form");
+  const message = document.getElementById("add-media-message");
+  if (!section || !form) return;
+
+  // Always start hidden
+  section.classList.add("hidden");
+
+  async function updateVisibility() {
+    try {
+      const res = await fetch("/api/me");
+      const data = await res.json();
+      if (data.loggedIn) {
+        section.classList.remove("hidden");
+      } else {
+        section.classList.add("hidden");
+      }
+    } catch (err) {
+      section.classList.add("hidden");
+    }
+  }
+
+  // Check after a short delay so auth has settled
+  setTimeout(updateVisibility, 100);
+  updateVisibility();
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      title: document.getElementById("new-title").value,
+      type: document.getElementById("new-type").value,
+      category: document.getElementById("new-category").value,
+      year: document.getElementById("new-year").value || null,
+      description: document.getElementById("new-description").value,
+      image: document.getElementById("new-image").value,
+      video_url: document.getElementById("new-video").value,
+      audio_url: document.getElementById("new-audio").value
+    };
+    try {
+      const res = await fetch("/api/media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        message.textContent = data.error || "Failed to add";
+        return;
+      }
+      message.textContent = "Added successfully!";
+      form.reset();
+      loadMedia();
+    } catch (err) {
+      message.textContent = "Network error";
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setupThemeToggle();
   setCurrentYear();
@@ -292,4 +351,5 @@ document.addEventListener("DOMContentLoaded", () => {
   setupDetail();
   setupMenuToggle();
   setupAuth();
+  setupAddMedia();
 });
