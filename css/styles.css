@@ -26,6 +26,7 @@ body.dark {
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Standardized type scale */
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg);
@@ -35,6 +36,129 @@ body {
   display: flex;
   flex-direction: column;
   margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+h1, .logo {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+p, .media-title, #auth-toggle-text, #auth-message, #add-media-message, #edit-message {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Buttons – consistent size */
+.auth-btn,
+.play-button,
+.card-actions button,
+#detail-play,
+button[type="submit"] {
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.6rem 1.1rem;
+  min-height: 44px;
+  border-radius: 999px;
+  letter-spacing: -0.01em;
+}
+
+.play-button,
+button[type="submit"] {
+  border-radius: 8px;
+  width: 100%;
+}
+
+/* Card Edit / Delete buttons – match Log in button */
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem 0.7rem;
+  justify-content: center;
+}
+
+.card-actions button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 0.95rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 36px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  width: auto;
+  transition: opacity 0.15s ease;
+}
+
+.card-actions button:hover {
+  opacity: 0.92;
+}
+
+.card-actions button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.card-actions.hidden {
+  display: none;
+}
+
+/* Form fields – consistent */
+input,
+textarea,
+#search-input,
+#auth-form input,
+#add-media-form input,
+#add-media-form textarea,
+#edit-media-form input,
+#edit-media-form textarea {
+  font-size: 1rem;
+  padding: 0.7rem 1rem;
+  min-height: 44px;
+  border-radius: 8px;
+}
+
+/* Smaller UI chrome */
+.menu-toggle {
+  font-size: 1.4rem;
+}
+
+.theme-toggle {
+  font-size: 1.05rem;
+}
+
+.detail-close {
+  font-size: 1.3rem;
+}
+
+.footer,
+.footer p {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Desktop logo slightly larger */
+@media (min-width: 681px) {
+  .logo {
+    font-size: 1.55rem;
+  }
+}
+
+@media (min-width: 1000px) {
+  .logo {
+    font-size: 1.7rem;
+  }
 }
 
 /* Header */
@@ -497,4 +621,38 @@ main {
   margin-top: 0.75rem;
   font-size: 0.95rem;
   min-height: 1.2em;
+}
+
+/* Edit form – match other form fields */
+#edit-media-form input,
+#edit-media-form textarea {
+  display: block;
+  width: 100%;
+  margin: 0.75rem 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+  min-height: 44px;
+}
+
+#edit-media-form input:focus,
+#edit-media-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+}
+
+#edit-overlay .detail-panel h2 {
+  font-size: 1.55rem;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+
+#edit-message {
+  margin-top: 0.6rem;
+  font-size: 0.9rem;
+  min-height: 1.1em;
 }

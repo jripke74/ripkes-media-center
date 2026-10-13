@@ -1,22 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0">
   <title>Ripke’s Media Center</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
   <header class="header">
     <h1 class="logo">Ripke’s Media Center</h1>
-    <button id="menu-toggle" class="menu-toggle" aria-label="Menu">☰</button>
+    <button id="menu-toggle" class="menu-toggle"
+      aria-label="Menu">☰</button>
 
     <div class="header-menu" id="header-menu">
-      <input type="search" id="search-input" placeholder="Search library…" aria-label="Search">
+      <input type="search" id="search-input"
+        placeholder="Search library…" aria-label="Search">
       <div id="auth-area">
         <button id="show-login" class="auth-btn">Log in</button>
       </div>
-      <button id="theme-toggle" class="theme-toggle" aria-label="Theme">🌙</button>
+      <button id="theme-toggle" class="theme-toggle"
+        aria-label="Theme">🌙</button>
     </div>
   </header>
 
@@ -26,15 +32,25 @@
     <section id="add-media-section" class="add-media hidden">
       <h2>Add New Media</h2>
       <form id="add-media-form">
-        <input type="text" id="new-title" placeholder="Title" required>
-        <input type="text" id="new-type" placeholder="Type (Movie, TV, Music…)" required>
-        <input type="text" id="new-category" placeholder="Category (Movies, TV Shows, Music…)" required>
-        <input type="number" id="new-year" placeholder="Year" min="1900" max="2100">
-        <textarea id="new-description" placeholder="Description" rows="3"></textarea>
-        <input type="url" id="new-image" placeholder="Poster image URL">
-        <input type="url" id="new-video" placeholder="Video URL (optional)">
-        <input type="url" id="new-audio" placeholder="Audio URL (optional)">
-        <button type="submit" class="play-button">Add Media</button>
+        <input type="text" id="new-title" placeholder="Title"
+          required>
+        <input type="text" id="new-type"
+          placeholder="Type (Movie, TV, Music…)" required>
+        <input type="text" id="new-category"
+          placeholder="Category (Movies, TV Shows, Music…)"
+          required>
+        <input type="number" id="new-year" placeholder="Year"
+          min="1900" max="2100">
+        <textarea id="new-description" placeholder="Description"
+          rows="3"></textarea>
+        <input type="url" id="new-image"
+          placeholder="Poster image URL">
+        <input type="url" id="new-video"
+          placeholder="Video URL (optional)">
+        <input type="url" id="new-audio"
+          placeholder="Audio URL (optional)">
+        <button type="submit" class="play-button">Add
+          Media</button>
       </form>
       <p id="add-media-message"></p>
     </section>
@@ -42,10 +58,13 @@
 
   <div id="detail-overlay" class="detail-overlay hidden">
     <div class="detail-panel">
-      <button id="detail-close" class="detail-close">&times;</button>
+      <button id="detail-close"
+        class="detail-close">&times;</button>
       <img id="detail-image" alt="">
-      <video id="detail-video" controls style="display:none;width:100%;border-radius:10px;"></video>
-      <audio id="detail-audio" controls style="display:none;width:100%;"></audio>
+      <video id="detail-video" controls
+        style="display:none;width:100%;border-radius:10px;"></video>
+      <audio id="detail-audio" controls
+        style="display:none;width:100%;"></audio>
       <h2 id="detail-title"></h2>
       <p id="detail-type"></p>
       <p id="detail-year"></p>
@@ -59,19 +78,49 @@
       <button id="auth-close" class="detail-close">&times;</button>
       <h2 id="auth-title">Log in</h2>
       <form id="auth-form">
-        <input type="email" id="auth-email" placeholder="Email" required>
-        <input type="password" id="auth-password" placeholder="Password" required>
+        <input type="email" id="auth-email" placeholder="Email"
+          required>
+        <input type="password" id="auth-password"
+          placeholder="Password" required>
         <button type="submit" class="play-button">Submit</button>
       </form>
-      <p id="auth-toggle-text">Need an account? <a href="#" id="toggle-auth-mode">Register</a></p>
+      <p id="auth-toggle-text">Need an account? <a href="#"
+          id="toggle-auth-mode">Register</a></p>
       <p id="auth-message"></p>
     </div>
   </div>
 
   <footer class="footer">
-    <p>&copy; <span id="current-year"></span> Jeff Ripke. All rights reserved.</p>
+    <p>&copy; <span id="current-year"></span> Jeff Ripke. All
+      rights reserved.</p>
   </footer>
 
+  <div id="edit-overlay" class="detail-overlay hidden">
+    <div class="detail-panel">
+      <button id="edit-close" class="detail-close">&times;</button>
+      <h2>Edit Media</h2>
+      <form id="edit-media-form">
+        <input type="hidden" id="edit-id">
+        <input type="text" id="edit-title" placeholder="Title"
+          required>
+        <input type="text" id="edit-type" placeholder="Type"
+          required>
+        <input type="text" id="edit-category"
+          placeholder="Category" required>
+        <input type="number" id="edit-year" placeholder="Year">
+        <textarea id="edit-description" placeholder="Description"
+          rows="3"></textarea>
+        <input type="url" id="edit-image"
+          placeholder="Poster image URL">
+        <input type="url" id="edit-video" placeholder="Video URL">
+        <input type="url" id="edit-audio" placeholder="Audio URL">
+        <button type="submit" class="play-button">Save
+          Changes</button>
+      </form>
+      <p id="edit-message"></p>
+    </div>
+  </div>
   <script src="js/app.js"></script>
 </body>
+
 </html>

@@ -229,3 +229,21 @@ git commit -m "Polish header, footer, login prompt, and responsive media layout"
 ---
 *Last updated: Chunk 13 + post-chunk polish*
 
+## Chunk 15: Edit and Delete Media
+
+### What we did
+- Added Edit and Delete buttons on each media card (visible only when logged in).
+- Created an edit modal that reuses the same fields as the add form.
+- Added protected `PUT /api/media/:id` and `DELETE /api/media/:id` routes.
+- After an edit or delete, the library refreshes.
+
+### Key learning notes
+- `PUT` is used for updating an existing resource.
+- `DELETE` removes a resource.
+- Confirmation dialogs help prevent accidental deletes.
+- We toggle the visibility of action buttons based on login state.
+
+### Commit
+```bash
+git add index.html css/styles.css js/app.js server.js DEVELOPMENT.md
+git commit -m "Add edit and delete for media items"
