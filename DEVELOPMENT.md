@@ -229,6 +229,19 @@ git commit -m "Polish header, footer, login prompt, and responsive media layout"
 ---
 *Last updated: Chunk 13 + post-chunk polish*
 
+## Chunk 14: Add Media Form
+
+### What we did
+- Added a form on the main page for creating new media items.
+- Created a protected `POST /api/media` endpoint.
+- The form only appears when the user is logged in.
+- After a successful add, the library refreshes.
+
+### Key learning notes
+- `POST` is used for creating resources.
+- The form is hidden until the user is authenticated.
+- We reuse the existing `loadMedia()` function to refresh the grid.
+
 ## Chunk 15: Edit and Delete Media
 
 ### What we did
@@ -241,12 +254,7 @@ git commit -m "Polish header, footer, login prompt, and responsive media layout"
 - `PUT` is used for updating an existing resource.
 - `DELETE` removes a resource.
 - Confirmation dialogs help prevent accidental deletes.
-- We toggle the visibility of action buttons based on login state.
-
-### Commit
-```bash
-git add index.html css/styles.css js/app.js server.js DEVELOPMENT.md
-git commit -m "Add edit and delete for media items"
+- Action buttons are shown or hidden based on login state.
 
 ## Chunk 16: More Metadata (Genre, Duration, Rating)
 
@@ -260,11 +268,6 @@ git commit -m "Add edit and delete for media items"
 - Numeric fields are optional and stored as `NULL` when left blank.
 - The detail view only shows a field when it has a value.
 
-### Commit
-```bash
-git add index.html css/styles.css js/app.js server.js DEVELOPMENT.md
-git commit -m "Add genre, duration, and rating metadata"
-
 ## Chunk 17: Recently Added Row
 
 ### What we did
@@ -277,7 +280,49 @@ git commit -m "Add genre, duration, and rating metadata"
 - We build a special category on the server and prepend it to the response.
 - Limiting to 12 items keeps the row from getting too long.
 
+## Chunk 18: Better Form Validation
+
+### What we did
+- Added client-side checks for required fields and valid ranges (year, rating).
+- Improved error messages so the user knows what to fix.
+- Added matching server-side validation.
+
+### Key learning notes
+- Client-side validation gives instant feedback.
+- Server-side validation protects the database even if someone bypasses the form.
+- Clear error messages improve the user experience.
+
+### Suggested commit for recent chunks
+```bash
+git add index.html css/styles.css js/app.js server.js DEVELOPMENT.md
+git commit -m "Add media CRUD, metadata, Recently Added row, and form validation"
+```
+
+### Next chunk ideas
+- Image file upload instead of URL.
+- Search that includes genre and description.
+- “Continue Watching” placeholder.
+- Sort options on category rows.
+
+---
+*Last updated: Chunk 18 – Form validation*
+
+## Chunk 19: Admin Role, Media Uploads, and File Validation
+
+### What we did
+- Added an `is_admin` flag to users.
+- Restricted add/edit/delete to admins.
+- Added file upload support for images, videos, and audio using multer.
+- Validated file types and size on the server.
+- Forms accept either a file or a URL.
+
+### Key learning notes
+- Admin checks protect sensitive actions.
+- `multer` handles multipart form data for file uploads.
+- File validation reduces the risk of malicious uploads.
+- Uploaded files are served from `/uploads`.
+
 ### Commit
 ```bash
-git add server.js DEVELOPMENT.md
-git commit -m "Add Recently Added row"
+git add server.js index.html js/app.js package.json DEVELOPMENT.md
+git commit -m "Add admin role, file uploads, and validation"

@@ -1,21 +1,44 @@
-// Ripke’s Media Center – Chunk 11: Basic video playback
-
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
 const { Pool } = require("pg");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
+const multer = require("multer");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Database
 const pool = new Pool({
-  user: process.env.PGUSER || "macprolaptop", // ← change this
+  user: process.env.PGUSER || "macprolaptop",
   host: process.env.PGHOST || "localhost",
   database: process.env.PGDATABASE || "ripkes_media",
   password: process.env.PGPASSWORD || "",
   port: process.env.PGPORT || 5432,
+});
+
+// Uploads
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, unique + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = /jpeg|jpg|png|gif|webp|mp4|webm|mp3|flac|m4a|wav/;
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.test(ext)) return cb(null, true);
+    cb(new Error("Unsupported file type"));
+  }
 });
 
 // Middleware
@@ -29,21 +52,28 @@ app.use(session({
 }));
 
 app.use(express.static(path.join(__dirname)));
+app.use("/uploads", express.static(uploadDir));
 
 function requireLogin(req, res, next) {
-  if (req.session.userId) {
-    return next();
-  }
+  if (req.session.userId) return next();
   res.status(401).json({ error: "Please log in" });
+}
+
+async function requireAdmin(req, res, next) {
+  if (!req.session.userId) return res.status(401).json({ error: "Please log in" });
+  try {
+    const result = await pool.query("SELECT is_admin FROM users WHERE id = $1", [req.session.userId]);
+    if (result.rows[0]?.is_admin) return next();
+    res.status(403).json({ error: "Admin access required" });
+  } catch (err) {
+    res.status(500).json({ error: "Auth check failed" });
+  }
 }
 
 // Auth routes
 app.post("/api/register", async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required" });
-  }
-
+  if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
   try {
     const password_hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
@@ -54,9 +84,7 @@ app.post("/api/register", async (req, res) => {
     req.session.email = result.rows[0].email;
     res.json({ message: "Registered and logged in", email: result.rows[0].email });
   } catch (err) {
-    if (err.code === "23505") {
-      return res.status(400).json({ error: "Email already exists" });
-    }
+    if (err.code === "23505") return res.status(400).json({ error: "Email already exists" });
     console.error(err);
     res.status(500).json({ error: "Registration failed" });
   }
@@ -64,22 +92,13 @@ app.post("/api/register", async (req, res) => {
 
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required" });
-  }
-
+  if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
   try {
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     const user = result.rows[0];
-    if (!user) {
-      return res.status(401).json({ error: "Invalid email or password" });
-    }
-
+    if (!user) return res.status(401).json({ error: "Invalid email or password" });
     const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) {
-      return res.status(401).json({ error: "Invalid email or password" });
-    }
-
+    if (!match) return res.status(401).json({ error: "Invalid email or password" });
     req.session.userId = user.id;
     req.session.email = user.email;
     res.json({ message: "Logged in", email: user.email });
@@ -90,62 +109,39 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.json({ message: "Logged out" });
-  });
+  req.session.destroy(() => res.json({ message: "Logged out" }));
 });
 
-app.get("/api/me", (req, res) => {
-  if (req.session.userId) {
-    res.json({ loggedIn: true, email: req.session.email });
-  } else {
+app.get("/api/me", async (req, res) => {
+  if (!req.session.userId) return res.json({ loggedIn: false });
+  try {
+    const result = await pool.query("SELECT email, is_admin FROM users WHERE id = $1", [req.session.userId]);
+    const user = result.rows[0];
+    res.json({ loggedIn: true, email: user.email, isAdmin: !!user.is_admin });
+  } catch (err) {
     res.json({ loggedIn: false });
   }
 });
 
-// Media route (includes video_url and audio_url)
+// Media routes
 app.get("/api/media", requireLogin, async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, title, type, image, category, year, description,
               video_url, audio_url, genre, duration, rating, created_at
-       FROM media
-       ORDER BY created_at DESC NULLS LAST, title`
+       FROM media ORDER BY created_at DESC NULLS LAST, title`
     );
-
     const categoriesMap = {};
     const recentItems = [];
-
     result.rows.forEach(row => {
-      const item = {
-        id: row.id,
-        title: row.title,
-        type: row.type,
-        image: row.image,
-        year: row.year,
-        description: row.description,
-        video_url: row.video_url,
-        audio_url: row.audio_url,
-        genre: row.genre,
-        duration: row.duration,
-        rating: row.rating,
-        created_at: row.created_at
-      };
-
-      if (!categoriesMap[row.category]) {
-        categoriesMap[row.category] = { title: row.category, items: [] };
-      }
+      const item = { ...row };
+      if (!categoriesMap[row.category]) categoriesMap[row.category] = { title: row.category, items: [] };
       categoriesMap[row.category].items.push(item);
-
       if (recentItems.length < 12) recentItems.push(item);
     });
-
     const response = [];
-    if (recentItems.length > 0) {
-      response.push({ title: "Recently Added", items: recentItems });
-    }
+    if (recentItems.length) response.push({ title: "Recently Added", items: recentItems });
     response.push(...Object.values(categoriesMap));
-
     res.json(response);
   } catch (err) {
     console.error(err);
@@ -153,16 +149,25 @@ app.get("/api/media", requireLogin, async (req, res) => {
   }
 });
 
-app.post("/api/media", requireLogin, async (req, res) => {
-  const { title, type, category, year, description, image, video_url, audio_url, genre, duration, rating } = req.body;
-  if (!title || !type || !category) {
-    return res.status(400).json({ error: "Title, type, and category are required" });
-  }
+app.post("/api/media", requireAdmin, upload.fields([
+  { name: "imageFile", maxCount: 1 },
+  { name: "videoFile", maxCount: 1 },
+  { name: "audioFile", maxCount: 1 }
+]), async (req, res) => {
+  const { title, type, category, year, description, genre, duration, rating } = req.body;
+  if (!title || !type || !category) return res.status(400).json({ error: "Title, type, and category are required" });
+  if (year && (year < 1900 || year > 2100)) return res.status(400).json({ error: "Year must be between 1900 and 2100" });
+  if (rating && (rating < 0 || rating > 10)) return res.status(400).json({ error: "Rating must be between 0 and 10" });
+
+  const image = req.files?.imageFile?.[0] ? `/uploads/${req.files.imageFile[0].filename}` : (req.body.image || null);
+  const video_url = req.files?.videoFile?.[0] ? `/uploads/${req.files.videoFile[0].filename}` : (req.body.video_url || null);
+  const audio_url = req.files?.audioFile?.[0] ? `/uploads/${req.files.audioFile[0].filename}` : (req.body.audio_url || null);
+
   try {
     await pool.query(
       `INSERT INTO media (title, type, category, year, description, image, video_url, audio_url, genre, duration, rating)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      [title, type, category, year || null, description || null, image || null, video_url || null, audio_url || null, genre || null, duration || null, rating || null]
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [title, type, category, year || null, description || null, image, video_url, audio_url, genre || null, duration || null, rating || null]
     );
     res.status(201).json({ success: true });
   } catch (err) {
@@ -171,20 +176,24 @@ app.post("/api/media", requireLogin, async (req, res) => {
   }
 });
 
-app.put("/api/media/:id", requireLogin, async (req, res) => {
+app.put("/api/media/:id", requireAdmin, upload.fields([
+  { name: "imageFile", maxCount: 1 },
+  { name: "videoFile", maxCount: 1 },
+  { name: "audioFile", maxCount: 1 }
+]), async (req, res) => {
   const { id } = req.params;
-  const { title, type, category, year, description, image, video_url, audio_url, genre, duration, rating } = req.body;
-  if (!title || !type || !category) {
-    return res.status(400).json({ error: "Title, type, and category are required" });
-  }
+  const { title, type, category, year, description, genre, duration, rating } = req.body;
+  if (!title || !type || !category) return res.status(400).json({ error: "Title, type, and category are required" });
+
+  const image = req.files?.imageFile?.[0] ? `/uploads/${req.files.imageFile[0].filename}` : (req.body.image || null);
+  const video_url = req.files?.videoFile?.[0] ? `/uploads/${req.files.videoFile[0].filename}` : (req.body.video_url || null);
+  const audio_url = req.files?.audioFile?.[0] ? `/uploads/${req.files.audioFile[0].filename}` : (req.body.audio_url || null);
+
   try {
     await pool.query(
-      `UPDATE media
-       SET title = $1, type = $2, category = $3, year = $4,
-           description = $5, image = $6, video_url = $7, audio_url = $8,
-           genre = $9, duration = $10, rating = $11
-       WHERE id = $12`,
-      [title, type, category, year || null, description || null, image || null, video_url || null, audio_url || null, genre || null, duration || null, rating || null, id]
+      `UPDATE media SET title=$1, type=$2, category=$3, year=$4, description=$5,
+       image=$6, video_url=$7, audio_url=$8, genre=$9, duration=$10, rating=$11 WHERE id=$12`,
+      [title, type, category, year || null, description || null, image, video_url, audio_url, genre || null, duration || null, rating || null, id]
     );
     res.json({ success: true });
   } catch (err) {
@@ -193,10 +202,9 @@ app.put("/api/media/:id", requireLogin, async (req, res) => {
   }
 });
 
-app.delete("/api/media/:id", requireLogin, async (req, res) => {
-  const { id } = req.params;
+app.delete("/api/media/:id", requireAdmin, async (req, res) => {
   try {
-    await pool.query("DELETE FROM media WHERE id = $1", [id]);
+    await pool.query("DELETE FROM media WHERE id = $1", [req.params.id]);
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -204,10 +212,7 @@ app.delete("/api/media/:id", requireLogin, async (req, res) => {
   }
 });
 
-// Fallback
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
+app.use((req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
 app.listen(PORT, () => {
   console.log(`Ripke’s Media Center running at http://localhost:${PORT}`);

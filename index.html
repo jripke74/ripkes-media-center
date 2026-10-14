@@ -35,8 +35,14 @@
         <input type="number" id="new-rating" placeholder="Rating (0–10)" step="0.1" min="0" max="10">
         <textarea id="new-description" placeholder="Description" rows="3"></textarea>
         <input type="url" id="new-image" placeholder="Poster image URL">
+        <label>Or upload poster</label>
+        <input type="file" id="new-image-file" accept="image/*">
         <input type="url" id="new-video" placeholder="Video URL (optional)">
+        <label>Or upload video</label>
+        <input type="file" id="new-video-file" accept="video/*">
         <input type="url" id="new-audio" placeholder="Audio URL (optional)">
+        <label>Or upload audio</label>
+        <input type="file" id="new-audio-file" accept="audio/*">
         <button type="submit" class="play-button">Add Media</button>
       </form>
       <p id="add-media-message"></p>
@@ -89,8 +95,14 @@
         <input type="number" id="edit-rating" placeholder="Rating (0–10)" step="0.1" min="0" max="10">
         <textarea id="edit-description" placeholder="Description" rows="3"></textarea>
         <input type="url" id="edit-image" placeholder="Poster image URL">
+        <label>Or upload poster</label>
+        <input type="file" id="edit-image-file" accept="image/*">
         <input type="url" id="edit-video" placeholder="Video URL">
+        <label>Or upload video</label>
+        <input type="file" id="edit-video-file" accept="video/*">
         <input type="url" id="edit-audio" placeholder="Audio URL">
+        <label>Or upload audio</label>
+        <input type="file" id="edit-audio-file" accept="audio/*">
         <button type="submit" class="play-button">Save Changes</button>
       </form>
       <p id="edit-message"></p>

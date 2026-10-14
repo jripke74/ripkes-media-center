@@ -321,7 +321,7 @@ function setupAddMedia() {
     try {
       const res = await fetch("/api/me");
       const data = await res.json();
-      if (data.loggedIn) {
+      if (data.loggedIn && data.isAdmin) {
         section.classList.remove("hidden");
       } else {
         section.classList.add("hidden");
@@ -336,27 +336,35 @@ function setupAddMedia() {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const payload = {
-      title: document.getElementById("new-title").value,
-      type: document.getElementById("new-type").value,
-      category: document.getElementById("new-category").value,
-      year: document.getElementById("new-year").value || null,
-      genre: document.getElementById("new-genre").value,
-      duration: document.getElementById("new-duration").value || null,
-      rating: document.getElementById("new-rating").value || null,
-      description: document.getElementById("new-description").value,
-      image: document.getElementById("new-image").value,
-      video_url: document.getElementById("new-video").value,
-      audio_url: document.getElementById("new-audio").value
-    };
+    const title = document.getElementById("new-title").value.trim();
+    const type = document.getElementById("new-type").value.trim();
+    const category = document.getElementById("new-category").value.trim();
+    if (!title || !type || !category) {
+      message.textContent = "Title, type, and category are required.";
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("type", type);
+    formData.append("category", category);
+    formData.append("year", document.getElementById("new-year").value || "");
+    formData.append("genre", document.getElementById("new-genre").value.trim());
+    formData.append("duration", document.getElementById("new-duration").value || "");
+    formData.append("rating", document.getElementById("new-rating").value || "");
+    formData.append("description", document.getElementById("new-description").value.trim());
+    formData.append("image", document.getElementById("new-image").value.trim());
+    formData.append("video_url", document.getElementById("new-video").value.trim());
+    formData.append("audio_url", document.getElementById("new-audio").value.trim());
+
+    if (document.getElementById("new-image-file").files[0]) formData.append("imageFile", document.getElementById("new-image-file").files[0]);
+    if (document.getElementById("new-video-file").files[0]) formData.append("videoFile", document.getElementById("new-video-file").files[0]);
+    if (document.getElementById("new-audio-file").files[0]) formData.append("audioFile", document.getElementById("new-audio-file").files[0]);
+
     try {
-      const res = await fetch("/api/media", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+      const res = await fetch("/api/media", { method: "POST", body: formData });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         message.textContent = data.error || "Failed to add";
         return;
       }
@@ -408,25 +416,25 @@ function setupEdit() {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const id = document.getElementById("edit-id").value;
-      const payload = {
-        title: document.getElementById("edit-title").value,
-        type: document.getElementById("edit-type").value,
-        category: document.getElementById("edit-category").value,
-        year: document.getElementById("edit-year").value || null,
-        genre: document.getElementById("edit-genre").value,
-        duration: document.getElementById("edit-duration").value || null,
-        rating: document.getElementById("edit-rating").value || null,
-        description: document.getElementById("edit-description").value,
-        image: document.getElementById("edit-image").value,
-        video_url: document.getElementById("edit-video").value,
-        audio_url: document.getElementById("edit-audio").value
-      };
+      const formData = new FormData();
+      formData.append("title", document.getElementById("edit-title").value.trim());
+      formData.append("type", document.getElementById("edit-type").value.trim());
+      formData.append("category", document.getElementById("edit-category").value.trim());
+      formData.append("year", document.getElementById("edit-year").value || "");
+      formData.append("genre", document.getElementById("edit-genre").value.trim());
+      formData.append("duration", document.getElementById("edit-duration").value || "");
+      formData.append("rating", document.getElementById("edit-rating").value || "");
+      formData.append("description", document.getElementById("edit-description").value.trim());
+      formData.append("image", document.getElementById("edit-image").value.trim());
+      formData.append("video_url", document.getElementById("edit-video").value.trim());
+      formData.append("audio_url", document.getElementById("edit-audio").value.trim());
+
+      if (document.getElementById("edit-image-file")?.files[0]) formData.append("imageFile", document.getElementById("edit-image-file").files[0]);
+      if (document.getElementById("edit-video-file")?.files[0]) formData.append("videoFile", document.getElementById("edit-video-file").files[0]);
+      if (document.getElementById("edit-audio-file")?.files[0]) formData.append("audioFile", document.getElementById("edit-audio-file").files[0]);
+
       try {
-        const res = await fetch(`/api/media/${id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
+        const res = await fetch(`/api/media/${id}`, { method: "PUT", body: formData });
         if (!res.ok) {
           const data = await res.json();
           if (message) message.textContent = data.error || "Failed to update";
@@ -463,7 +471,7 @@ function showCardActionsIfLoggedIn() {
     .then(r => r.json())
     .then(data => {
       document.querySelectorAll(".card-actions").forEach(el => {
-        el.classList.toggle("hidden", !data.loggedIn);
+        el.classList.toggle("hidden", !(data.loggedIn && data.isAdmin));
       });
     })
     .catch(() => {});
