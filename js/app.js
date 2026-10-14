@@ -10,10 +10,12 @@ function createMediaCard(item) {
   card.dataset.id = item.id;
   card.dataset.title = (item.title || "").toLowerCase();
   card.dataset.type = (item.type || "").toLowerCase();
+  card.dataset.genre = (item.genre || "").toLowerCase();
+  card.dataset.description = (item.description || "").toLowerCase();
   card.innerHTML = `
-    <img src="${item.image || ''}" alt="${item.title || ''}">
+    <img src="${item.image || ""}" alt="${item.title || ""}">
     <div class="media-info">
-      <div class="media-title">${item.title || ''}</div>
+      <div class="media-title">${item.title || ""}</div>
     </div>
     <div class="card-actions hidden">
       <button class="card-edit" data-id="${item.id}">Edit</button>
@@ -21,14 +23,19 @@ function createMediaCard(item) {
     </div>
   `;
   card.addEventListener("click", (e) => {
-    if (e.target.classList.contains("card-edit") || e.target.classList.contains("card-delete")) return;
+    if (
+      e.target.classList.contains("card-edit") ||
+      e.target.classList.contains("card-delete")
+    )
+      return;
     openDetail(item);
   });
 
   const editBtn = card.querySelector(".card-edit");
   const deleteBtn = card.querySelector(".card-delete");
   if (editBtn) editBtn.addEventListener("click", () => openEditModal(item));
-  if (deleteBtn) deleteBtn.addEventListener("click", () => deleteMedia(item.id));
+  if (deleteBtn)
+    deleteBtn.addEventListener("click", () => deleteMedia(item.id));
 
   return card;
 }
@@ -37,7 +44,7 @@ function renderCategoryRows() {
   const container = document.getElementById("library");
   container.innerHTML = "";
 
-  mediaCategories.forEach(category => {
+  mediaCategories.forEach((category) => {
     const section = document.createElement("section");
     section.className = "category-row";
 
@@ -48,7 +55,7 @@ function renderCategoryRows() {
     const scroller = document.createElement("div");
     scroller.className = "row-scroller";
 
-    category.items.forEach(item => {
+    category.items.forEach((item) => {
       scroller.appendChild(createMediaCard(item));
     });
 
@@ -61,14 +68,23 @@ function filterMedia(query) {
   const q = query.toLowerCase().trim();
   const rows = document.querySelectorAll(".category-row");
 
-  rows.forEach(row => {
+  rows.forEach((row) => {
     const cards = row.querySelectorAll(".media-card");
     let visibleCount = 0;
 
-    cards.forEach(card => {
-      const matches = !q ||
-        card.dataset.title.includes(q) ||
-        card.dataset.type.includes(q);
+    cards.forEach((card) => {
+      const title = card.dataset.title || "";
+      const type = card.dataset.type || "";
+      const genre = card.dataset.genre || "";
+      const description = card.dataset.description || "";
+
+      const matches =
+        !q ||
+        title.includes(q) ||
+        type.includes(q) ||
+        genre.includes(q) ||
+        description.includes(q);
+
       card.style.display = matches ? "" : "none";
       if (matches) visibleCount++;
     });
@@ -84,14 +100,21 @@ function openDetail(item) {
 
   document.getElementById("detail-title").textContent = item.title;
   document.getElementById("detail-type").textContent = item.type || "";
-  document.getElementById("detail-year").textContent = item.year ? `Year: ${item.year}` : "";
+  document.getElementById("detail-year").textContent = item.year
+    ? `Year: ${item.year}`
+    : "";
   const genreEl = document.getElementById("detail-genre");
   const durationEl = document.getElementById("detail-duration");
   const ratingEl = document.getElementById("detail-rating");
   if (genreEl) genreEl.textContent = item.genre ? `Genre: ${item.genre}` : "";
-  if (durationEl) durationEl.textContent = item.duration ? `Duration: ${item.duration} min` : "";
-  if (ratingEl) ratingEl.textContent = item.rating ? `Rating: ${item.rating}/10` : "";
-  document.getElementById("detail-description").textContent = item.description || "";
+  if (durationEl)
+    durationEl.textContent = item.duration
+      ? `Duration: ${item.duration} min`
+      : "";
+  if (ratingEl)
+    ratingEl.textContent = item.rating ? `Rating: ${item.rating}/10` : "";
+  document.getElementById("detail-description").textContent =
+    item.description || "";
 
   // Reset previous video
   video.pause();
@@ -232,7 +255,9 @@ function updateAuthUI(user) {
     document.getElementById("logout-btn").addEventListener("click", logout);
   } else {
     authArea.innerHTML = `<button id="show-login" class="auth-btn">Log in</button>`;
-    document.getElementById("show-login").addEventListener("click", showAuthModal);
+    document
+      .getElementById("show-login")
+      .addEventListener("click", showAuthModal);
   }
 }
 
@@ -261,11 +286,12 @@ async function handleAuthSubmit(e) {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
     if (!res.ok) {
-      document.getElementById("auth-message").textContent = data.error || "Something went wrong";
+      document.getElementById("auth-message").textContent =
+        data.error || "Something went wrong";
       return;
     }
     hideAuthModal();
@@ -298,11 +324,15 @@ function setupAuth() {
     toggleLink.addEventListener("click", (e) => {
       e.preventDefault();
       isLoginMode = !isLoginMode;
-      document.getElementById("auth-title").textContent = isLoginMode ? "Log in" : "Register";
+      document.getElementById("auth-title").textContent = isLoginMode
+        ? "Log in"
+        : "Register";
       document.getElementById("auth-toggle-text").innerHTML = isLoginMode
         ? 'Need an account? <a href="#" id="toggle-auth-mode">Register</a>'
         : 'Already have an account? <a href="#" id="toggle-auth-mode">Log in</a>';
-      document.getElementById("toggle-auth-mode").addEventListener("click", arguments.callee);
+      document
+        .getElementById("toggle-auth-mode")
+        .addEventListener("click", arguments.callee);
     });
   }
 
@@ -317,7 +347,7 @@ function setupAddMedia() {
 
   section.classList.add("hidden");
 
-  window.updateAddMediaVisibility = async function() {
+  window.updateAddMediaVisibility = async function () {
     try {
       const res = await fetch("/api/me");
       const data = await res.json();
@@ -350,16 +380,43 @@ function setupAddMedia() {
     formData.append("category", category);
     formData.append("year", document.getElementById("new-year").value || "");
     formData.append("genre", document.getElementById("new-genre").value.trim());
-    formData.append("duration", document.getElementById("new-duration").value || "");
-    formData.append("rating", document.getElementById("new-rating").value || "");
-    formData.append("description", document.getElementById("new-description").value.trim());
+    formData.append(
+      "duration",
+      document.getElementById("new-duration").value || "",
+    );
+    formData.append(
+      "rating",
+      document.getElementById("new-rating").value || "",
+    );
+    formData.append(
+      "description",
+      document.getElementById("new-description").value.trim(),
+    );
     formData.append("image", document.getElementById("new-image").value.trim());
-    formData.append("video_url", document.getElementById("new-video").value.trim());
-    formData.append("audio_url", document.getElementById("new-audio").value.trim());
+    formData.append(
+      "video_url",
+      document.getElementById("new-video").value.trim(),
+    );
+    formData.append(
+      "audio_url",
+      document.getElementById("new-audio").value.trim(),
+    );
 
-    if (document.getElementById("new-image-file").files[0]) formData.append("imageFile", document.getElementById("new-image-file").files[0]);
-    if (document.getElementById("new-video-file").files[0]) formData.append("videoFile", document.getElementById("new-video-file").files[0]);
-    if (document.getElementById("new-audio-file").files[0]) formData.append("audioFile", document.getElementById("new-audio-file").files[0]);
+    if (document.getElementById("new-image-file").files[0])
+      formData.append(
+        "imageFile",
+        document.getElementById("new-image-file").files[0],
+      );
+    if (document.getElementById("new-video-file").files[0])
+      formData.append(
+        "videoFile",
+        document.getElementById("new-video-file").files[0],
+      );
+    if (document.getElementById("new-audio-file").files[0])
+      formData.append(
+        "audioFile",
+        document.getElementById("new-audio-file").files[0],
+      );
 
     try {
       const res = await fetch("/api/media", { method: "POST", body: formData });
@@ -417,24 +474,69 @@ function setupEdit() {
       e.preventDefault();
       const id = document.getElementById("edit-id").value;
       const formData = new FormData();
-      formData.append("title", document.getElementById("edit-title").value.trim());
-      formData.append("type", document.getElementById("edit-type").value.trim());
-      formData.append("category", document.getElementById("edit-category").value.trim());
+      formData.append(
+        "title",
+        document.getElementById("edit-title").value.trim(),
+      );
+      formData.append(
+        "type",
+        document.getElementById("edit-type").value.trim(),
+      );
+      formData.append(
+        "category",
+        document.getElementById("edit-category").value.trim(),
+      );
       formData.append("year", document.getElementById("edit-year").value || "");
-      formData.append("genre", document.getElementById("edit-genre").value.trim());
-      formData.append("duration", document.getElementById("edit-duration").value || "");
-      formData.append("rating", document.getElementById("edit-rating").value || "");
-      formData.append("description", document.getElementById("edit-description").value.trim());
-      formData.append("image", document.getElementById("edit-image").value.trim());
-      formData.append("video_url", document.getElementById("edit-video").value.trim());
-      formData.append("audio_url", document.getElementById("edit-audio").value.trim());
+      formData.append(
+        "genre",
+        document.getElementById("edit-genre").value.trim(),
+      );
+      formData.append(
+        "duration",
+        document.getElementById("edit-duration").value || "",
+      );
+      formData.append(
+        "rating",
+        document.getElementById("edit-rating").value || "",
+      );
+      formData.append(
+        "description",
+        document.getElementById("edit-description").value.trim(),
+      );
+      formData.append(
+        "image",
+        document.getElementById("edit-image").value.trim(),
+      );
+      formData.append(
+        "video_url",
+        document.getElementById("edit-video").value.trim(),
+      );
+      formData.append(
+        "audio_url",
+        document.getElementById("edit-audio").value.trim(),
+      );
 
-      if (document.getElementById("edit-image-file")?.files[0]) formData.append("imageFile", document.getElementById("edit-image-file").files[0]);
-      if (document.getElementById("edit-video-file")?.files[0]) formData.append("videoFile", document.getElementById("edit-video-file").files[0]);
-      if (document.getElementById("edit-audio-file")?.files[0]) formData.append("audioFile", document.getElementById("edit-audio-file").files[0]);
+      if (document.getElementById("edit-image-file")?.files[0])
+        formData.append(
+          "imageFile",
+          document.getElementById("edit-image-file").files[0],
+        );
+      if (document.getElementById("edit-video-file")?.files[0])
+        formData.append(
+          "videoFile",
+          document.getElementById("edit-video-file").files[0],
+        );
+      if (document.getElementById("edit-audio-file")?.files[0])
+        formData.append(
+          "audioFile",
+          document.getElementById("edit-audio-file").files[0],
+        );
 
       try {
-        const res = await fetch(`/api/media/${id}`, { method: "PUT", body: formData });
+        const res = await fetch(`/api/media/${id}`, {
+          method: "PUT",
+          body: formData,
+        });
         if (!res.ok) {
           const data = await res.json();
           if (message) message.textContent = data.error || "Failed to update";
@@ -468,9 +570,9 @@ async function deleteMedia(id) {
 
 function showCardActionsIfLoggedIn() {
   fetch("/api/me")
-    .then(r => r.json())
-    .then(data => {
-      document.querySelectorAll(".card-actions").forEach(el => {
+    .then((r) => r.json())
+    .then((data) => {
+      document.querySelectorAll(".card-actions").forEach((el) => {
         el.classList.toggle("hidden", !(data.loggedIn && data.isAdmin));
       });
     })
@@ -489,7 +591,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Wrap loadMedia so action buttons appear after media loads
   const originalLoadMedia = loadMedia;
-  loadMedia = async function() {
+  loadMedia = async function () {
     await originalLoadMedia();
     showCardActionsIfLoggedIn();
   };

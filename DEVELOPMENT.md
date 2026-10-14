@@ -326,3 +326,19 @@ git commit -m "Add media CRUD, metadata, Recently Added row, and form validation
 ```bash
 git add server.js index.html js/app.js package.json DEVELOPMENT.md
 git commit -m "Add admin role, file uploads, and validation"
+
+## Chunk 20: Search Includes Genre and Description
+
+### What we did
+- Expanded the client-side search so it matches title, type, genre, and description.
+- Stored the extra fields as data attributes on each card.
+
+### Key learning notes
+- Data attributes let us keep searchable text on the element without extra lookups.
+- The filter still hides entire category rows when none of their cards match.
+- This is still client-side; a later chunk can move search to the server if the library grows.
+
+### Commit
+```bash
+git add js/app.js DEVELOPMENT.md
+git commit -m "Expand search to include genre and description"
