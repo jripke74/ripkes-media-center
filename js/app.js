@@ -12,16 +12,27 @@ function createMediaCard(item) {
   card.dataset.type = (item.type || "").toLowerCase();
   card.dataset.genre = (item.genre || "").toLowerCase();
   card.dataset.description = (item.description || "").toLowerCase();
+
+  const genreText = item.genre
+    ? `<div class="media-genre">${item.genre}</div>`
+    : "";
+  const descText = item.description
+    ? `<div class="media-desc">${item.description.substring(0, 80)}${item.description.length > 80 ? "…" : ""}</div>`
+    : "";
+
   card.innerHTML = `
     <img src="${item.image || ""}" alt="${item.title || ""}">
     <div class="media-info">
       <div class="media-title">${item.title || ""}</div>
+      ${genreText}
+      ${descText}
     </div>
     <div class="card-actions hidden">
       <button class="card-edit" data-id="${item.id}">Edit</button>
       <button class="card-delete" data-id="${item.id}">Delete</button>
     </div>
   `;
+
   card.addEventListener("click", (e) => {
     if (
       e.target.classList.contains("card-edit") ||
@@ -205,6 +216,53 @@ function setupMenuToggle() {
     menu.classList.toggle("open");
     toggle.textContent = menu.classList.contains("open") ? "✕" : "☰";
   });
+}
+
+function setupUsers() {
+  const section = document.getElementById("users-section");
+  const list = document.getElementById("users-list");
+  if (!section || !list) return;
+
+  async function loadUsers() {
+    try {
+      const meRes = await fetch("/api/me");
+      const me = await meRes.json();
+      if (!me.isAdmin) {
+        section.classList.add("hidden");
+        return;
+      }
+      section.classList.remove("hidden");
+
+      const usersRes = await fetch("/api/users");
+      if (!usersRes.ok) {
+        const err = await usersRes.json();
+        list.innerHTML = `<p>${err.error || "Could not load users"}</p>`;
+        return;
+      }
+      const users = await usersRes.json();
+      if (!users.length) {
+        list.innerHTML = "<p>No users found</p>";
+        return;
+      }
+      list.innerHTML = users
+        .map(
+          (u) => `
+        <div style="padding:0.5rem 0; border-bottom:1px solid var(--border);">
+          <strong>${u.email}</strong>
+          <span style="color:var(--muted); margin-left:0.5rem;">
+            ${u.is_admin ? "Admin" : "User"}
+          </span>
+        </div>
+      `,
+        )
+        .join("");
+    } catch (err) {
+      console.error(err);
+      list.innerHTML = "<p>Could not load users</p>";
+    }
+  }
+
+  loadUsers();
 }
 
 async function loadMedia() {
@@ -588,6 +646,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupAuth();
   setupAddMedia();
   setupEdit();
+  setupUsers();
 
   // Wrap loadMedia so action buttons appear after media loads
   const originalLoadMedia = loadMedia;
