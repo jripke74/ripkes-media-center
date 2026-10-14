@@ -439,3 +439,20 @@ git commit -m "Add admin user list"
 ```bash
 git add server.js js/app.js DEVELOPMENT.md
 git commit -m "Allow admins to toggle user admin status"
+
+## Chunk 24: Delete User Accounts
+
+### What we did
+- Added a protected `DELETE /api/users/:id` endpoint.
+- Added a Delete button next to each user (except the current admin).
+- Confirmation dialog prevents accidental deletion.
+
+### Key learning notes
+- Admins cannot delete their own account.
+- The list refreshes after a successful delete.
+- Confirmation dialogs are important for destructive actions.
+
+### Commit
+```bash
+git add server.js js/app.js DEVELOPMENT.md
+git commit -m "Allow admins to delete user accounts"
