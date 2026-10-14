@@ -264,3 +264,20 @@ git commit -m "Add edit and delete for media items"
 ```bash
 git add index.html css/styles.css js/app.js server.js DEVELOPMENT.md
 git commit -m "Add genre, duration, and rating metadata"
+
+## Chunk 17: Recently Added Row
+
+### What we did
+- Added a `created_at` timestamp column to the media table.
+- Updated the media API to return a “Recently Added” category at the top.
+- The row shows the 12 newest items.
+
+### Key learning notes
+- `DEFAULT CURRENT_TIMESTAMP` automatically records when a row is created.
+- We build a special category on the server and prepend it to the response.
+- Limiting to 12 items keeps the row from getting too long.
+
+### Commit
+```bash
+git add server.js DEVELOPMENT.md
+git commit -m "Add Recently Added row"

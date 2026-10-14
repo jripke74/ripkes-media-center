@@ -107,15 +107,17 @@ app.get("/api/me", (req, res) => {
 app.get("/api/media", requireLogin, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, title, type, image, category, year, description, video_url, audio_url, genre, duration, rating FROM media ORDER BY category, title"
+      `SELECT id, title, type, image, category, year, description,
+              video_url, audio_url, genre, duration, rating, created_at
+       FROM media
+       ORDER BY created_at DESC NULLS LAST, title`
     );
 
     const categoriesMap = {};
+    const recentItems = [];
+
     result.rows.forEach(row => {
-      if (!categoriesMap[row.category]) {
-        categoriesMap[row.category] = { title: row.category, items: [] };
-      }
-      categoriesMap[row.category].items.push({
+      const item = {
         id: row.id,
         title: row.title,
         type: row.type,
@@ -126,11 +128,25 @@ app.get("/api/media", requireLogin, async (req, res) => {
         audio_url: row.audio_url,
         genre: row.genre,
         duration: row.duration,
-        rating: row.rating
-      });
+        rating: row.rating,
+        created_at: row.created_at
+      };
+
+      if (!categoriesMap[row.category]) {
+        categoriesMap[row.category] = { title: row.category, items: [] };
+      }
+      categoriesMap[row.category].items.push(item);
+
+      if (recentItems.length < 12) recentItems.push(item);
     });
 
-    res.json(Object.values(categoriesMap));
+    const response = [];
+    if (recentItems.length > 0) {
+      response.push({ title: "Recently Added", items: recentItems });
+    }
+    response.push(...Object.values(categoriesMap));
+
+    res.json(response);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });
