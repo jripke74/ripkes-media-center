@@ -11,9 +11,9 @@ function createMediaCard(item) {
   card.dataset.title = (item.title || "").toLowerCase();
   card.dataset.type = (item.type || "").toLowerCase();
   card.innerHTML = `
-    <img src="${item.image || ""}" alt="${item.title || ""}">
+    <img src="${item.image || ''}" alt="${item.title || ''}">
     <div class="media-info">
-      <div class="media-title">${item.title || ""}</div>
+      <div class="media-title">${item.title || ''}</div>
     </div>
     <div class="card-actions hidden">
       <button class="card-edit" data-id="${item.id}">Edit</button>
@@ -21,19 +21,14 @@ function createMediaCard(item) {
     </div>
   `;
   card.addEventListener("click", (e) => {
-    if (
-      e.target.classList.contains("card-edit") ||
-      e.target.classList.contains("card-delete")
-    )
-      return;
+    if (e.target.classList.contains("card-edit") || e.target.classList.contains("card-delete")) return;
     openDetail(item);
   });
 
   const editBtn = card.querySelector(".card-edit");
   const deleteBtn = card.querySelector(".card-delete");
   if (editBtn) editBtn.addEventListener("click", () => openEditModal(item));
-  if (deleteBtn)
-    deleteBtn.addEventListener("click", () => deleteMedia(item.id));
+  if (deleteBtn) deleteBtn.addEventListener("click", () => deleteMedia(item.id));
 
   return card;
 }
@@ -42,7 +37,7 @@ function renderCategoryRows() {
   const container = document.getElementById("library");
   container.innerHTML = "";
 
-  mediaCategories.forEach((category) => {
+  mediaCategories.forEach(category => {
     const section = document.createElement("section");
     section.className = "category-row";
 
@@ -53,7 +48,7 @@ function renderCategoryRows() {
     const scroller = document.createElement("div");
     scroller.className = "row-scroller";
 
-    category.items.forEach((item) => {
+    category.items.forEach(item => {
       scroller.appendChild(createMediaCard(item));
     });
 
@@ -66,13 +61,14 @@ function filterMedia(query) {
   const q = query.toLowerCase().trim();
   const rows = document.querySelectorAll(".category-row");
 
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const cards = row.querySelectorAll(".media-card");
     let visibleCount = 0;
 
-    cards.forEach((card) => {
-      const matches =
-        !q || card.dataset.title.includes(q) || card.dataset.type.includes(q);
+    cards.forEach(card => {
+      const matches = !q ||
+        card.dataset.title.includes(q) ||
+        card.dataset.type.includes(q);
       card.style.display = matches ? "" : "none";
       if (matches) visibleCount++;
     });
@@ -88,11 +84,14 @@ function openDetail(item) {
 
   document.getElementById("detail-title").textContent = item.title;
   document.getElementById("detail-type").textContent = item.type || "";
-  document.getElementById("detail-year").textContent = item.year
-    ? `Year: ${item.year}`
-    : "";
-  document.getElementById("detail-description").textContent =
-    item.description || "";
+  document.getElementById("detail-year").textContent = item.year ? `Year: ${item.year}` : "";
+  const genreEl = document.getElementById("detail-genre");
+  const durationEl = document.getElementById("detail-duration");
+  const ratingEl = document.getElementById("detail-rating");
+  if (genreEl) genreEl.textContent = item.genre ? `Genre: ${item.genre}` : "";
+  if (durationEl) durationEl.textContent = item.duration ? `Duration: ${item.duration} min` : "";
+  if (ratingEl) ratingEl.textContent = item.rating ? `Rating: ${item.rating}/10` : "";
+  document.getElementById("detail-description").textContent = item.description || "";
 
   // Reset previous video
   video.pause();
@@ -233,9 +232,7 @@ function updateAuthUI(user) {
     document.getElementById("logout-btn").addEventListener("click", logout);
   } else {
     authArea.innerHTML = `<button id="show-login" class="auth-btn">Log in</button>`;
-    document
-      .getElementById("show-login")
-      .addEventListener("click", showAuthModal);
+    document.getElementById("show-login").addEventListener("click", showAuthModal);
   }
 }
 
@@ -245,6 +242,10 @@ async function checkAuth() {
     const data = await res.json();
     updateAuthUI(data);
     loadMedia();
+    // Also refresh add-media form visibility
+    if (typeof updateAddMediaVisibility === "function") {
+      updateAddMediaVisibility();
+    }
   } catch (err) {
     console.error(err);
   }
@@ -260,12 +261,11 @@ async function handleAuthSubmit(e) {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password })
     });
     const data = await res.json();
     if (!res.ok) {
-      document.getElementById("auth-message").textContent =
-        data.error || "Something went wrong";
+      document.getElementById("auth-message").textContent = data.error || "Something went wrong";
       return;
     }
     hideAuthModal();
@@ -298,15 +298,11 @@ function setupAuth() {
     toggleLink.addEventListener("click", (e) => {
       e.preventDefault();
       isLoginMode = !isLoginMode;
-      document.getElementById("auth-title").textContent = isLoginMode
-        ? "Log in"
-        : "Register";
+      document.getElementById("auth-title").textContent = isLoginMode ? "Log in" : "Register";
       document.getElementById("auth-toggle-text").innerHTML = isLoginMode
         ? 'Need an account? <a href="#" id="toggle-auth-mode">Register</a>'
         : 'Already have an account? <a href="#" id="toggle-auth-mode">Log in</a>';
-      document
-        .getElementById("toggle-auth-mode")
-        .addEventListener("click", arguments.callee);
+      document.getElementById("toggle-auth-mode").addEventListener("click", arguments.callee);
     });
   }
 
@@ -319,10 +315,9 @@ function setupAddMedia() {
   const message = document.getElementById("add-media-message");
   if (!section || !form) return;
 
-  // Always start hidden
   section.classList.add("hidden");
 
-  async function updateVisibility() {
+  window.updateAddMediaVisibility = async function() {
     try {
       const res = await fetch("/api/me");
       const data = await res.json();
@@ -334,11 +329,10 @@ function setupAddMedia() {
     } catch (err) {
       section.classList.add("hidden");
     }
-  }
+  };
 
-  // Check after a short delay so auth has settled
-  setTimeout(updateVisibility, 100);
-  updateVisibility();
+  setTimeout(window.updateAddMediaVisibility, 150);
+  window.updateAddMediaVisibility();
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -347,16 +341,19 @@ function setupAddMedia() {
       type: document.getElementById("new-type").value,
       category: document.getElementById("new-category").value,
       year: document.getElementById("new-year").value || null,
+      genre: document.getElementById("new-genre").value,
+      duration: document.getElementById("new-duration").value || null,
+      rating: document.getElementById("new-rating").value || null,
       description: document.getElementById("new-description").value,
       image: document.getElementById("new-image").value,
       video_url: document.getElementById("new-video").value,
-      audio_url: document.getElementById("new-audio").value,
+      audio_url: document.getElementById("new-audio").value
     };
     try {
       const res = await fetch("/api/media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
       if (!res.ok) {
         const data = await res.json();
@@ -373,21 +370,25 @@ function setupAddMedia() {
 }
 
 function openEditModal(item) {
-  document.getElementById("edit-id").value = item.id;
+  document.getElementById("edit-id").value = item.id || "";
   document.getElementById("edit-title").value = item.title || "";
   document.getElementById("edit-type").value = item.type || "";
   document.getElementById("edit-category").value = item.category || "";
   document.getElementById("edit-year").value = item.year || "";
+  document.getElementById("edit-genre").value = item.genre || "";
+  document.getElementById("edit-duration").value = item.duration || "";
+  document.getElementById("edit-rating").value = item.rating || "";
   document.getElementById("edit-description").value = item.description || "";
   document.getElementById("edit-image").value = item.image || "";
   document.getElementById("edit-video").value = item.video_url || "";
   document.getElementById("edit-audio").value = item.audio_url || "";
-  document.getElementById("edit-message").textContent = "";
-  document.getElementById("edit-overlay").classList.remove("hidden");
+  const msg = document.getElementById("edit-message");
+  if (msg) msg.textContent = "";
+  document.getElementById("edit-overlay")?.classList.remove("hidden");
 }
 
 function closeEditModal() {
-  document.getElementById("edit-overlay").classList.add("hidden");
+  document.getElementById("edit-overlay")?.classList.add("hidden");
 }
 
 function setupEdit() {
@@ -412,29 +413,32 @@ function setupEdit() {
         type: document.getElementById("edit-type").value,
         category: document.getElementById("edit-category").value,
         year: document.getElementById("edit-year").value || null,
+        genre: document.getElementById("edit-genre").value,
+        duration: document.getElementById("edit-duration").value || null,
+        rating: document.getElementById("edit-rating").value || null,
         description: document.getElementById("edit-description").value,
         image: document.getElementById("edit-image").value,
         video_url: document.getElementById("edit-video").value,
-        audio_url: document.getElementById("edit-audio").value,
+        audio_url: document.getElementById("edit-audio").value
       };
       try {
         const res = await fetch(`/api/media/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(payload)
         });
         if (!res.ok) {
           const data = await res.json();
-          message.textContent = data.error || "Failed to update";
+          if (message) message.textContent = data.error || "Failed to update";
           return;
         }
-        message.textContent = "Updated!";
+        if (message) message.textContent = "Updated!";
         setTimeout(() => {
           closeEditModal();
           loadMedia();
         }, 600);
       } catch (err) {
-        message.textContent = "Network error";
+        if (message) message.textContent = "Network error";
       }
     });
   }
@@ -456,12 +460,13 @@ async function deleteMedia(id) {
 
 function showCardActionsIfLoggedIn() {
   fetch("/api/me")
-    .then((r) => r.json())
-    .then((data) => {
-      document.querySelectorAll(".card-actions").forEach((el) => {
+    .then(r => r.json())
+    .then(data => {
+      document.querySelectorAll(".card-actions").forEach(el => {
         el.classList.toggle("hidden", !data.loggedIn);
       });
-    });
+    })
+    .catch(() => {});
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -473,9 +478,10 @@ document.addEventListener("DOMContentLoaded", () => {
   setupAuth();
   setupAddMedia();
   setupEdit();
-  // After media loads, show/hide action buttons
+
+  // Wrap loadMedia so action buttons appear after media loads
   const originalLoadMedia = loadMedia;
-  loadMedia = async function () {
+  loadMedia = async function() {
     await originalLoadMedia();
     showCardActionsIfLoggedIn();
   };

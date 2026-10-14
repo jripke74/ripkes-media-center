@@ -247,3 +247,20 @@ git commit -m "Polish header, footer, login prompt, and responsive media layout"
 ```bash
 git add index.html css/styles.css js/app.js server.js DEVELOPMENT.md
 git commit -m "Add edit and delete for media items"
+
+## Chunk 16: More Metadata (Genre, Duration, Rating)
+
+### What we did
+- Added genre, duration (minutes), and rating (0–10) columns to the media table.
+- Updated the add form, edit form, and detail panel to include the new fields.
+- Backend routes now accept and return the extra metadata.
+
+### Key learning notes
+- `ALTER TABLE` is used to add columns to an existing table.
+- Numeric fields are optional and stored as `NULL` when left blank.
+- The detail view only shows a field when it has a value.
+
+### Commit
+```bash
+git add index.html css/styles.css js/app.js server.js DEVELOPMENT.md
+git commit -m "Add genre, duration, and rating metadata"
