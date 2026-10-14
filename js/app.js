@@ -227,8 +227,9 @@ function setupUsers() {
     try {
       const meRes = await fetch("/api/me");
       const me = await meRes.json();
-      if (!me.isAdmin) {
+      if (!me.loggedIn || !me.isAdmin) {
         section.classList.add("hidden");
+        list.innerHTML = "";
         return;
       }
       section.classList.remove("hidden");
@@ -247,21 +248,53 @@ function setupUsers() {
       list.innerHTML = users
         .map(
           (u) => `
-        <div style="padding:0.5rem 0; border-bottom:1px solid var(--border);">
-          <strong>${u.email}</strong>
-          <span style="color:var(--muted); margin-left:0.5rem;">
-            ${u.is_admin ? "Admin" : "User"}
-          </span>
+        <div style="padding:0.6rem 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong>${u.email}</strong>
+            <span style="color:var(--muted); margin-left:0.5rem;">
+              ${u.is_admin ? "Admin" : "User"}
+            </span>
+          </div>
+          ${
+            u.id !== me.id
+              ? `
+            <button class="auth-btn toggle-admin" data-id="${u.id}" style="font-size:0.85rem; padding:0.3rem 0.7rem;">
+              ${u.is_admin ? "Remove Admin" : "Make Admin"}
+            </button>
+          `
+              : ""
+          }
         </div>
       `,
         )
         .join("");
+
+      list.querySelectorAll(".toggle-admin").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          try {
+            const res = await fetch(`/api/users/${id}/toggle-admin`, {
+              method: "POST",
+            });
+            if (!res.ok) {
+              const data = await res.json();
+              alert(data.error || "Could not update");
+              return;
+            }
+            loadUsers();
+          } catch (err) {
+            alert("Network error");
+          }
+        });
+      });
     } catch (err) {
-      console.error(err);
-      list.innerHTML = "<p>Could not load users</p>";
+      section.classList.add("hidden");
+      list.innerHTML = "";
     }
   }
 
+  // Expose so login/logout can refresh it
+  window.loadUsers = loadUsers;
   loadUsers();
 }
 
@@ -325,6 +358,7 @@ async function checkAuth() {
     const data = await res.json();
     updateAuthUI(data);
     loadMedia();
+    if (typeof window.loadUsers === "function") window.loadUsers();
     // Also refresh add-media form visibility
     if (typeof updateAddMediaVisibility === "function") {
       updateAddMediaVisibility();

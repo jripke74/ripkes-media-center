@@ -423,3 +423,19 @@ git commit -m "Show genre and description on media cards"
 git add server.js index.html js/app.js DEVELOPMENT.md
 git commit -m "Add admin user list"
 ````
+## Chunk 23: Toggle Admin Status
+
+### What we did
+- Added a protected endpoint to flip a user’s admin flag.
+- Added buttons on the user list so admins can promote or demote others.
+- Prevented users from changing their own admin status.
+
+### Key learning notes
+- We use `NOT is_admin` to toggle the boolean in one query.
+- The frontend reloads the list after a successful change.
+- Protecting against self-demotion avoids locking yourself out.
+
+### Commit
+```bash
+git add server.js js/app.js DEVELOPMENT.md
+git commit -m "Allow admins to toggle user admin status"

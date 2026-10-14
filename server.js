@@ -173,7 +173,7 @@ app.get("/api/media", requireLogin, async (req, res) => {
 app.get("/api/users", requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, email, is_admin FROM users ORDER BY id DESC"
+      "SELECT id, email, is_admin FROM users ORDER BY id DESC",
     );
     res.json(result.rows);
   } catch (err) {
@@ -247,6 +247,28 @@ app.post(
     }
   },
 );
+
+app.post("/api/users/:id/toggle-admin", requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  if (parseInt(id) === req.session.userId) {
+    return res
+      .status(400)
+      .json({ error: "You cannot change your own admin status" });
+  }
+  try {
+    const result = await pool.query(
+      "UPDATE users SET is_admin = NOT is_admin WHERE id = $1 RETURNING is_admin",
+      [id],
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ success: true, isAdmin: result.rows[0].is_admin });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not update user" });
+  }
+});
 
 app.put(
   "/api/media/:id",
