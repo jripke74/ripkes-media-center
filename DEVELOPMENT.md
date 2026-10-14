@@ -456,3 +456,20 @@ git commit -m "Allow admins to toggle user admin status"
 ```bash
 git add server.js js/app.js DEVELOPMENT.md
 git commit -m "Allow admins to delete user accounts"
+
+## Chunk 25: Upload Progress Feedback
+
+### What we did
+- Added a progress bar to the add and edit forms.
+- Switched the upload to XMLHttpRequest so we can track progress.
+- The bar appears during upload and hides when finished.
+
+### Key learning notes
+- `fetch` does not expose upload progress easily.
+- `xhr.upload.onprogress` gives us the percentage.
+- The progress element is hidden by default and shown only while uploading.
+
+### Commit
+```bash
+git add index.html js/app.js DEVELOPMENT.md
+git commit -m "Add upload progress feedback"
