@@ -491,3 +491,20 @@ git commit -m "Add upload progress feedback"
 ```bash
 git add server.js js/app.js DEVELOPMENT.md
 git commit -m "Add server-side search"
+
+## Chunk 27: Continue Watching Placeholder
+
+### What we did
+- Saved the last few opened items to localStorage.
+- Added a “Continue Watching” row that appears at the top of the library.
+- Limited the list to the 8 most recent items.
+
+### Key learning notes
+- localStorage keeps data between page loads in the browser.
+- We rebuild the row after every media load so it stays in sync.
+- This is a client-side placeholder; a later chunk can move it to the database.
+
+### Commit
+```bash
+git add js/app.js DEVELOPMENT.md
+git commit -m "Add Continue Watching row using localStorage"
