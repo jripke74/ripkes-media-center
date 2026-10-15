@@ -508,3 +508,21 @@ git commit -m "Add server-side search"
 ```bash
 git add js/app.js DEVELOPMENT.md
 git commit -m "Add Continue Watching row using localStorage"
+
+## Chunk 28: Continue Watching in the Database
+
+### What we did
+- Created a `continue_watching` table linked to users and media.
+- Added endpoints to save and retrieve the list.
+- Updated the frontend to use the server instead of localStorage.
+- Limited the list to the 8 most recent items per user.
+
+### Key learning notes
+- `ON CONFLICT` lets us upsert (insert or update) in one query.
+- The list is now tied to the logged-in user.
+- `ON DELETE CASCADE` cleans up entries if a user or media item is deleted.
+
+### Commit
+```bash
+git add server.js js/app.js DEVELOPMENT.md
+git commit -m "Move Continue Watching to the database"

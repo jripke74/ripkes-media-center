@@ -81,30 +81,32 @@ function filterMedia(query) {
   });
 }
 
-function renderContinueWatching() {
-  let recent = [];
+async function renderContinueWatching() {
   try {
-    recent = JSON.parse(localStorage.getItem("continueWatching") || "[]");
-  } catch (e) {}
+    const res = await fetch("/api/continue-watching");
+    if (!res.ok) return;
+    const recent = await res.json();
+    if (!recent.length) return;
 
-  if (!recent.length) return;
+    const container = document.getElementById("library");
+    if (!container) return;
 
-  const container = document.getElementById("library");
-  if (!container) return;
+    const section = document.createElement("section");
+    section.className = "category-row";
+    section.innerHTML = `<h2>Continue Watching</h2>`;
 
-  const section = document.createElement("section");
-  section.className = "category-row";
-  section.innerHTML = `<h2>Continue Watching</h2>`;
+    const scroller = document.createElement("div");
+    scroller.className = "row-scroller";
 
-  const scroller = document.createElement("div");
-  scroller.className = "row-scroller";
+    recent.forEach((item) => {
+      scroller.appendChild(createMediaCard(item));
+    });
 
-  recent.forEach((item) => {
-    scroller.appendChild(createMediaCard(item));
-  });
-
-  section.appendChild(scroller);
-  container.insertBefore(section, container.firstChild);
+    section.appendChild(scroller);
+    container.insertBefore(section, container.firstChild);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function openDetail(item) {
@@ -258,7 +260,7 @@ async function loadMedia() {
     if (!response.ok) throw new Error("Failed to load media");
     mediaCategories = await response.json();
     renderCategoryRows();
-    renderContinueWatching();
+    await renderContinueWatching();
   } catch (err) {
     console.error(err);
     const container = document.getElementById("library");
@@ -268,29 +270,17 @@ async function loadMedia() {
   }
 }
 
-function rememberItem(item) {
+async function rememberItem(item) {
   if (!item || !item.id) return;
-  let recent = [];
   try {
-    recent = JSON.parse(localStorage.getItem("continueWatching") || "[]");
-  } catch (e) {}
-
-  // Remove the item if it already exists
-  recent = recent.filter((i) => i.id !== item.id);
-  // Add it to the front
-  recent.unshift({
-    id: item.id,
-    title: item.title,
-    type: item.type,
-    image: item.image,
-    genre: item.genre,
-    description: item.description,
-    video_url: item.video_url,
-    audio_url: item.audio_url,
-  });
-  // Keep only the last 8
-  recent = recent.slice(0, 8);
-  localStorage.setItem("continueWatching", JSON.stringify(recent));
+    await fetch("/api/continue-watching", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mediaId: item.id }),
+    });
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function showAuthModal() {

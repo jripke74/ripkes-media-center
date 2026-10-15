@@ -320,6 +320,43 @@ app.delete("/api/media/:id", requireAdmin, async (req, res) => {
   }
 });
 
+// Save / update an item in Continue Watching
+app.post("/api/continue-watching", requireLogin, async (req, res) => {
+  const { mediaId } = req.body;
+  if (!mediaId) return res.status(400).json({ error: "mediaId required" });
+  try {
+    await pool.query(
+      `INSERT INTO continue_watching (user_id, media_id)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id, media_id)
+       DO UPDATE SET watched_at = CURRENT_TIMESTAMP`,
+      [req.session.userId, mediaId],
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not save" });
+  }
+});
+
+// Get the user's Continue Watching list
+app.get("/api/continue-watching", requireLogin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT m.* FROM continue_watching cw
+       JOIN media m ON m.id = cw.media_id
+       WHERE cw.user_id = $1
+       ORDER BY cw.watched_at DESC
+       LIMIT 8`,
+      [req.session.userId],
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not load" });
+  }
+});
+
 app.get("/api/users", requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
