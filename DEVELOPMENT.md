@@ -473,3 +473,21 @@ git commit -m "Allow admins to delete user accounts"
 ```bash
 git add index.html js/app.js DEVELOPMENT.md
 git commit -m "Add upload progress feedback"
+
+## Chunk 26: Server-side Search
+
+### What we did
+- Moved search from the browser to the server.
+- The `/api/media` endpoint now accepts a `q` query parameter.
+- Search matches title, type, genre, and description using `ILIKE`.
+- The frontend waits 300 ms after typing before sending the request.
+
+### Key learning notes
+- Server-side search scales better as the library grows.
+- `ILIKE` is case-insensitive.
+- Debouncing prevents a request on every keystroke.
+
+### Commit
+```bash
+git add server.js js/app.js DEVELOPMENT.md
+git commit -m "Add server-side search"

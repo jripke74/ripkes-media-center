@@ -150,9 +150,26 @@ function setCurrentYear() {
 
 function setupSearch() {
   const input = document.getElementById("search-input");
-  if (input) {
-    input.addEventListener("input", () => filterMedia(input.value));
-  }
+  if (!input) return;
+
+  let timeout;
+  input.addEventListener("input", () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(async () => {
+      const q = input.value.trim();
+      try {
+        const res = await fetch(`/api/media?q=${encodeURIComponent(q)}`);
+        if (!res.ok) return;
+        mediaCategories = await res.json();
+        renderCategoryRows();
+        if (typeof showCardActionsIfLoggedIn === "function") {
+          showCardActionsIfLoggedIn();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }, 300);
+  });
 }
 
 function setupDetail() {
