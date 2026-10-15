@@ -526,3 +526,21 @@ git commit -m "Add Continue Watching row using localStorage"
 ```bash
 git add server.js js/app.js DEVELOPMENT.md
 git commit -m "Move Continue Watching to the database"
+
+## Chunk 29: Password Reset
+
+### What we did
+- Created a `password_resets` table for temporary codes.
+- Added endpoints to request a code and to set a new password.
+- Added a simple reset form inside the login modal.
+- Codes expire after 15 minutes and can only be used once.
+
+### Key learning notes
+- We don’t reveal whether an email exists (good security practice).
+- For learning we log the code to the console; a real app would email it.
+- The code is marked as used after a successful reset.
+
+### Commit
+```bash
+git add server.js index.html js/app.js DEVELOPMENT.md
+git commit -m "Add password reset flow"

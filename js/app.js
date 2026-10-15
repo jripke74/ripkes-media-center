@@ -164,6 +164,79 @@ function closeDetail() {
   document.getElementById("detail-overlay").classList.add("hidden");
 }
 
+function setupPasswordReset() {
+  const showLink = document.getElementById("show-reset");
+  const backLink = document.getElementById("back-to-login");
+  const resetSection = document.getElementById("reset-section");
+  const forgotForm = document.getElementById("forgot-form");
+  const resetForm = document.getElementById("reset-form");
+  const message = document.getElementById("reset-message");
+
+  if (showLink) {
+    showLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      document.getElementById("auth-form").classList.add("hidden");
+      resetSection.classList.remove("hidden");
+    });
+  }
+
+  if (backLink) {
+    backLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      resetSection.classList.add("hidden");
+      document.getElementById("auth-form").classList.remove("hidden");
+      message.textContent = "";
+    });
+  }
+
+  if (forgotForm) {
+    forgotForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("forgot-email").value;
+      try {
+        const res = await fetch("/api/forgot-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        message.textContent =
+          data.message || "Check the server console for the code";
+        if (data.code) {
+          resetForm.classList.remove("hidden");
+        }
+      } catch (err) {
+        message.textContent = "Network error";
+      }
+    });
+  }
+
+  if (resetForm) {
+    resetForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("forgot-email").value;
+      const code = document.getElementById("reset-code").value;
+      const newPassword = document.getElementById("reset-password").value;
+      try {
+        const res = await fetch("/api/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, code, newPassword }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          message.textContent = data.error || "Reset failed";
+          return;
+        }
+        message.textContent = "Password updated. You can now log in.";
+        resetForm.classList.add("hidden");
+      } catch (err) {
+        message.textContent = "Network error";
+      }
+    });
+  }
+}
+
 function setupThemeToggle() {
   const toggle = document.getElementById("theme-toggle");
   const body = document.body;
@@ -737,6 +810,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupAddMedia();
   setupEdit();
   setupUsers();
+  setupPasswordReset();
 
   const originalLoadMedia = loadMedia;
   loadMedia = async function () {
