@@ -27,7 +27,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, unique + path.extname(file.originalname));
-  },
+  }
 });
 
 const upload = multer({
@@ -38,20 +38,18 @@ const upload = multer({
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowed.test(ext)) return cb(null, true);
     cb(new Error("Unsupported file type"));
-  },
+  }
 });
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(
-  session({
-    secret: "change-this-to-a-long-random-string-later",
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: false },
-  }),
-);
+app.use(session({
+  secret: "change-this-to-a-long-random-string-later",
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false }
+}));
 
 app.use(express.static(path.join(__dirname)));
 app.use("/uploads", express.static(uploadDir));
@@ -62,13 +60,9 @@ function requireLogin(req, res, next) {
 }
 
 async function requireAdmin(req, res, next) {
-  if (!req.session.userId)
-    return res.status(401).json({ error: "Please log in" });
+  if (!req.session.userId) return res.status(401).json({ error: "Please log in" });
   try {
-    const result = await pool.query(
-      "SELECT is_admin FROM users WHERE id = $1",
-      [req.session.userId],
-    );
+    const result = await pool.query("SELECT is_admin FROM users WHERE id = $1", [req.session.userId]);
     if (result.rows[0]?.is_admin) return next();
     res.status(403).json({ error: "Admin access required" });
   } catch (err) {
@@ -79,23 +73,18 @@ async function requireAdmin(req, res, next) {
 // Auth routes
 app.post("/api/register", async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ error: "Email and password are required" });
+  if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
   try {
     const password_hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
       "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email",
-      [email, password_hash],
+      [email, password_hash]
     );
     req.session.userId = result.rows[0].id;
     req.session.email = result.rows[0].email;
-    res.json({
-      message: "Registered and logged in",
-      email: result.rows[0].email,
-    });
+    res.json({ message: "Registered and logged in", email: result.rows[0].email });
   } catch (err) {
-    if (err.code === "23505")
-      return res.status(400).json({ error: "Email already exists" });
+    if (err.code === "23505") return res.status(400).json({ error: "Email already exists" });
     console.error(err);
     res.status(500).json({ error: "Registration failed" });
   }
@@ -103,18 +92,13 @@ app.post("/api/register", async (req, res) => {
 
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ error: "Email and password are required" });
+  if (!email || !password) return res.status(400).json({ error: "Email and password are required" });
   try {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     const user = result.rows[0];
-    if (!user)
-      return res.status(401).json({ error: "Invalid email or password" });
+    if (!user) return res.status(401).json({ error: "Invalid email or password" });
     const match = await bcrypt.compare(password, user.password_hash);
-    if (!match)
-      return res.status(401).json({ error: "Invalid email or password" });
+    if (!match) return res.status(401).json({ error: "Invalid email or password" });
     req.session.userId = user.id;
     req.session.email = user.email;
     res.json({ message: "Logged in", email: user.email });
@@ -131,10 +115,7 @@ app.post("/api/logout", (req, res) => {
 app.get("/api/me", async (req, res) => {
   if (!req.session.userId) return res.json({ loggedIn: false });
   try {
-    const result = await pool.query(
-      "SELECT email, is_admin FROM users WHERE id = $1",
-      [req.session.userId],
-    );
+    const result = await pool.query("SELECT email, is_admin FROM users WHERE id = $1", [req.session.userId]);
     const user = result.rows[0];
     res.json({ loggedIn: true, email: user.email, isAdmin: !!user.is_admin });
   } catch (err) {
@@ -146,6 +127,10 @@ app.get("/api/me", async (req, res) => {
 app.get("/api/media", requireLogin, async (req, res) => {
   try {
     const q = (req.query.q || "").trim();
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
     let query = `
       SELECT id, title, type, image, category, year, description,
              video_url, audio_url, genre, duration, rating, created_at
@@ -156,159 +141,92 @@ app.get("/api/media", requireLogin, async (req, res) => {
       query += ` WHERE title ILIKE $1 OR type ILIKE $1 OR genre ILIKE $1 OR description ILIKE $1`;
       params.push(`%${q}%`);
     }
-    query += ` ORDER BY created_at DESC NULLS LAST, title`;
+    query += ` ORDER BY created_at DESC NULLS LAST, title LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit, offset);
 
     const result = await pool.query(query, params);
 
+    let countQuery = "SELECT COUNT(*) FROM media";
+    const countParams = [];
+    if (q) {
+      countQuery += " WHERE title ILIKE $1 OR type ILIKE $1 OR genre ILIKE $1 OR description ILIKE $1";
+      countParams.push(`%${q}%`);
+    }
+    const countResult = await pool.query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0].count, 10) || 0;
+
     const categoriesMap = {};
-    const recentItems = [];
-    result.rows.forEach((row) => {
-      const item = { ...row };
+    result.rows.forEach(row => {
       if (!categoriesMap[row.category]) {
         categoriesMap[row.category] = { title: row.category, items: [] };
       }
-      categoriesMap[row.category].items.push(item);
-      if (recentItems.length < 12) recentItems.push(item);
+      categoriesMap[row.category].items.push(row);
     });
 
-    const response = [];
-    if (recentItems.length)
-      response.push({ title: "Recently Added", items: recentItems });
-    response.push(...Object.values(categoriesMap));
-    res.json(response);
+    res.json({
+      categories: Object.values(categoriesMap),
+      page,
+      totalPages: Math.ceil(total / limit) || 1,
+      total
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database error" });
   }
 });
 
-app.post(
-  "/api/media",
-  requireAdmin,
-  upload.fields([
-    { name: "imageFile", maxCount: 1 },
-    { name: "videoFile", maxCount: 1 },
-    { name: "audioFile", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    const {
-      title,
-      type,
-      category,
-      year,
-      description,
-      genre,
-      duration,
-      rating,
-    } = req.body;
-    if (!title || !type || !category)
-      return res
-        .status(400)
-        .json({ error: "Title, type, and category are required" });
-    if (year && (year < 1900 || year > 2100))
-      return res
-        .status(400)
-        .json({ error: "Year must be between 1900 and 2100" });
-    if (rating && (rating < 0 || rating > 10))
-      return res.status(400).json({ error: "Rating must be between 0 and 10" });
+app.post("/api/media", requireAdmin, upload.fields([
+  { name: "imageFile", maxCount: 1 },
+  { name: "videoFile", maxCount: 1 },
+  { name: "audioFile", maxCount: 1 }
+]), async (req, res) => {
+  const { title, type, category, year, description, genre, duration, rating } = req.body;
+  if (!title || !type || !category) return res.status(400).json({ error: "Title, type, and category are required" });
+  if (year && (year < 1900 || year > 2100)) return res.status(400).json({ error: "Year must be between 1900 and 2100" });
+  if (rating && (rating < 0 || rating > 10)) return res.status(400).json({ error: "Rating must be between 0 and 10" });
 
-    const image = req.files?.imageFile?.[0]
-      ? `/uploads/${req.files.imageFile[0].filename}`
-      : req.body.image || null;
-    const video_url = req.files?.videoFile?.[0]
-      ? `/uploads/${req.files.videoFile[0].filename}`
-      : req.body.video_url || null;
-    const audio_url = req.files?.audioFile?.[0]
-      ? `/uploads/${req.files.audioFile[0].filename}`
-      : req.body.audio_url || null;
+  const image = req.files?.imageFile?.[0] ? `/uploads/${req.files.imageFile[0].filename}` : (req.body.image || null);
+  const video_url = req.files?.videoFile?.[0] ? `/uploads/${req.files.videoFile[0].filename}` : (req.body.video_url || null);
+  const audio_url = req.files?.audioFile?.[0] ? `/uploads/${req.files.audioFile[0].filename}` : (req.body.audio_url || null);
 
-    try {
-      await pool.query(
-        `INSERT INTO media (title, type, category, year, description, image, video_url, audio_url, genre, duration, rating)
+  try {
+    await pool.query(
+      `INSERT INTO media (title, type, category, year, description, image, video_url, audio_url, genre, duration, rating)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-        [
-          title,
-          type,
-          category,
-          year || null,
-          description || null,
-          image,
-          video_url,
-          audio_url,
-          genre || null,
-          duration || null,
-          rating || null,
-        ],
-      );
-      res.status(201).json({ success: true });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Could not add media" });
-    }
-  },
-);
+      [title, type, category, year || null, description || null, image, video_url, audio_url, genre || null, duration || null, rating || null]
+    );
+    res.status(201).json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not add media" });
+  }
+});
 
-app.put(
-  "/api/media/:id",
-  requireAdmin,
-  upload.fields([
-    { name: "imageFile", maxCount: 1 },
-    { name: "videoFile", maxCount: 1 },
-    { name: "audioFile", maxCount: 1 },
-  ]),
-  async (req, res) => {
-    const { id } = req.params;
-    const {
-      title,
-      type,
-      category,
-      year,
-      description,
-      genre,
-      duration,
-      rating,
-    } = req.body;
-    if (!title || !type || !category)
-      return res
-        .status(400)
-        .json({ error: "Title, type, and category are required" });
+app.put("/api/media/:id", requireAdmin, upload.fields([
+  { name: "imageFile", maxCount: 1 },
+  { name: "videoFile", maxCount: 1 },
+  { name: "audioFile", maxCount: 1 }
+]), async (req, res) => {
+  const { id } = req.params;
+  const { title, type, category, year, description, genre, duration, rating } = req.body;
+  if (!title || !type || !category) return res.status(400).json({ error: "Title, type, and category are required" });
 
-    const image = req.files?.imageFile?.[0]
-      ? `/uploads/${req.files.imageFile[0].filename}`
-      : req.body.image || null;
-    const video_url = req.files?.videoFile?.[0]
-      ? `/uploads/${req.files.videoFile[0].filename}`
-      : req.body.video_url || null;
-    const audio_url = req.files?.audioFile?.[0]
-      ? `/uploads/${req.files.audioFile[0].filename}`
-      : req.body.audio_url || null;
+  const image = req.files?.imageFile?.[0] ? `/uploads/${req.files.imageFile[0].filename}` : (req.body.image || null);
+  const video_url = req.files?.videoFile?.[0] ? `/uploads/${req.files.videoFile[0].filename}` : (req.body.video_url || null);
+  const audio_url = req.files?.audioFile?.[0] ? `/uploads/${req.files.audioFile[0].filename}` : (req.body.audio_url || null);
 
-    try {
-      await pool.query(
-        `UPDATE media SET title=$1, type=$2, category=$3, year=$4, description=$5,
+  try {
+    await pool.query(
+      `UPDATE media SET title=$1, type=$2, category=$3, year=$4, description=$5,
        image=$6, video_url=$7, audio_url=$8, genre=$9, duration=$10, rating=$11 WHERE id=$12`,
-        [
-          title,
-          type,
-          category,
-          year || null,
-          description || null,
-          image,
-          video_url,
-          audio_url,
-          genre || null,
-          duration || null,
-          rating || null,
-          id,
-        ],
-      );
-      res.json({ success: true });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Could not update media" });
-    }
-  },
-);
+      [title, type, category, year || null, description || null, image, video_url, audio_url, genre || null, duration || null, rating || null, id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not update media" });
+  }
+});
 
 app.delete("/api/media/:id", requireAdmin, async (req, res) => {
   try {
@@ -320,48 +238,9 @@ app.delete("/api/media/:id", requireAdmin, async (req, res) => {
   }
 });
 
-// Save / update an item in Continue Watching
-app.post("/api/continue-watching", requireLogin, async (req, res) => {
-  const { mediaId } = req.body;
-  if (!mediaId) return res.status(400).json({ error: "mediaId required" });
-  try {
-    await pool.query(
-      `INSERT INTO continue_watching (user_id, media_id)
-       VALUES ($1, $2)
-       ON CONFLICT (user_id, media_id)
-       DO UPDATE SET watched_at = CURRENT_TIMESTAMP`,
-      [req.session.userId, mediaId],
-    );
-    res.json({ success: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Could not save" });
-  }
-});
-
-// Get the user's Continue Watching list
-app.get("/api/continue-watching", requireLogin, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT m.* FROM continue_watching cw
-       JOIN media m ON m.id = cw.media_id
-       WHERE cw.user_id = $1
-       ORDER BY cw.watched_at DESC
-       LIMIT 8`,
-      [req.session.userId],
-    );
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Could not load" });
-  }
-});
-
 app.get("/api/users", requireAdmin, async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT id, email, is_admin FROM users ORDER BY id DESC",
-    );
+    const result = await pool.query("SELECT id, email, is_admin FROM users ORDER BY id DESC");
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -372,17 +251,14 @@ app.get("/api/users", requireAdmin, async (req, res) => {
 app.post("/api/users/:id/toggle-admin", requireAdmin, async (req, res) => {
   const { id } = req.params;
   if (parseInt(id) === req.session.userId) {
-    return res
-      .status(400)
-      .json({ error: "You cannot change your own admin status" });
+    return res.status(400).json({ error: "You cannot change your own admin status" });
   }
   try {
     const result = await pool.query(
       "UPDATE users SET is_admin = NOT is_admin WHERE id = $1 RETURNING is_admin",
-      [id],
+      [id]
     );
-    if (result.rowCount === 0)
-      return res.status(404).json({ error: "User not found" });
+    if (result.rowCount === 0) return res.status(404).json({ error: "User not found" });
     res.json({ success: true, isAdmin: result.rows[0].is_admin });
   } catch (err) {
     console.error(err);
@@ -390,91 +266,14 @@ app.post("/api/users/:id/toggle-admin", requireAdmin, async (req, res) => {
   }
 });
 
-// Request a reset code
-app.post("/api/forgot-password", async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email required" });
-
-  try {
-    const user = await pool.query("SELECT id FROM users WHERE email = $1", [
-      email,
-    ]);
-    if (user.rows.length === 0) {
-      // Don't reveal whether the email exists
-      return res.json({
-        message: "If that email exists, a reset code was created",
-      });
-    }
-
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-    await pool.query(
-      "INSERT INTO password_resets (user_id, code, expires_at) VALUES ($1, $2, $3)",
-      [user.rows[0].id, code, expires],
-    );
-
-    // In a real app you would email the code. For learning we return it.
-    console.log(`Password reset code for ${email}: ${code}`);
-    res.json({
-      message: "Reset code created (check server console for now)",
-      code,
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Could not create reset code" });
-  }
-});
-
-// Reset the password with the code
-app.post("/api/reset-password", async (req, res) => {
-  const { email, code, newPassword } = req.body;
-  if (!email || !code || !newPassword) {
-    return res
-      .status(400)
-      .json({ error: "Email, code, and new password required" });
-  }
-
-  try {
-    const result = await pool.query(
-      `SELECT pr.*, u.id AS user_id
-       FROM password_resets pr
-       JOIN users u ON u.id = pr.user_id
-       WHERE u.email = $1 AND pr.code = $2 AND pr.used = FALSE AND pr.expires_at > NOW()`,
-      [email, code],
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(400).json({ error: "Invalid or expired code" });
-    }
-
-    const password_hash = await bcrypt.hash(newPassword, 10);
-    await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [
-      password_hash,
-      result.rows[0].user_id,
-    ]);
-    await pool.query("UPDATE password_resets SET used = TRUE WHERE id = $1", [
-      result.rows[0].id,
-    ]);
-
-    res.json({ message: "Password updated" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Could not reset password" });
-  }
-});
-
 app.delete("/api/users/:id", requireAdmin, async (req, res) => {
   const { id } = req.params;
   if (parseInt(id) === req.session.userId) {
-    return res
-      .status(400)
-      .json({ error: "You cannot delete your own account" });
+    return res.status(400).json({ error: "You cannot delete your own account" });
   }
   try {
     const result = await pool.query("DELETE FROM users WHERE id = $1", [id]);
-    if (result.rowCount === 0)
-      return res.status(404).json({ error: "User not found" });
+    if (result.rowCount === 0) return res.status(404).json({ error: "User not found" });
     res.json({ success: true });
   } catch (err) {
     console.error(err);

@@ -81,40 +81,10 @@ function filterMedia(query) {
   });
 }
 
-async function renderContinueWatching() {
-  try {
-    const res = await fetch("/api/continue-watching");
-    if (!res.ok) return;
-    const recent = await res.json();
-    if (!recent.length) return;
-
-    const container = document.getElementById("library");
-    if (!container) return;
-
-    const section = document.createElement("section");
-    section.className = "category-row";
-    section.innerHTML = `<h2>Continue Watching</h2>`;
-
-    const scroller = document.createElement("div");
-    scroller.className = "row-scroller";
-
-    recent.forEach((item) => {
-      scroller.appendChild(createMediaCard(item));
-    });
-
-    section.appendChild(scroller);
-    container.insertBefore(section, container.firstChild);
-  } catch (err) {
-    console.error(err);
-  }
-}
-
 function openDetail(item) {
   const img = document.getElementById("detail-image");
   const video = document.getElementById("detail-video");
   const playBtn = document.getElementById("detail-play");
-
-  rememberItem(item);
 
   document.getElementById("detail-title").textContent = item.title;
   document.getElementById("detail-type").textContent = item.type || "";
@@ -164,79 +134,6 @@ function closeDetail() {
   document.getElementById("detail-overlay").classList.add("hidden");
 }
 
-function setupPasswordReset() {
-  const showLink = document.getElementById("show-reset");
-  const backLink = document.getElementById("back-to-login");
-  const resetSection = document.getElementById("reset-section");
-  const forgotForm = document.getElementById("forgot-form");
-  const resetForm = document.getElementById("reset-form");
-  const message = document.getElementById("reset-message");
-
-  if (showLink) {
-    showLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      document.getElementById("auth-form").classList.add("hidden");
-      resetSection.classList.remove("hidden");
-    });
-  }
-
-  if (backLink) {
-    backLink.addEventListener("click", (e) => {
-      e.preventDefault();
-      resetSection.classList.add("hidden");
-      document.getElementById("auth-form").classList.remove("hidden");
-      message.textContent = "";
-    });
-  }
-
-  if (forgotForm) {
-    forgotForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("forgot-email").value;
-      try {
-        const res = await fetch("/api/forgot-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-        const data = await res.json();
-        message.textContent =
-          data.message || "Check the server console for the code";
-        if (data.code) {
-          resetForm.classList.remove("hidden");
-        }
-      } catch (err) {
-        message.textContent = "Network error";
-      }
-    });
-  }
-
-  if (resetForm) {
-    resetForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("forgot-email").value;
-      const code = document.getElementById("reset-code").value;
-      const newPassword = document.getElementById("reset-password").value;
-      try {
-        const res = await fetch("/api/reset-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, code, newPassword }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          message.textContent = data.error || "Reset failed";
-          return;
-        }
-        message.textContent = "Password updated. You can now log in.";
-        resetForm.classList.add("hidden");
-      } catch (err) {
-        message.textContent = "Network error";
-      }
-    });
-  }
-}
-
 function setupThemeToggle() {
   const toggle = document.getElementById("theme-toggle");
   const body = document.body;
@@ -264,26 +161,9 @@ function setCurrentYear() {
 
 function setupSearch() {
   const input = document.getElementById("search-input");
-  if (!input) return;
-
-  let timeout;
-  input.addEventListener("input", () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(async () => {
-      const q = input.value.trim();
-      try {
-        const res = await fetch(`/api/media?q=${encodeURIComponent(q)}`);
-        if (!res.ok) return;
-        mediaCategories = await res.json();
-        renderCategoryRows();
-        if (typeof showCardActionsIfLoggedIn === "function") {
-          showCardActionsIfLoggedIn();
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }, 300);
-  });
+  if (input) {
+    input.addEventListener("input", () => filterMedia(input.value));
+  }
 }
 
 function setupDetail() {
@@ -315,9 +195,14 @@ function setupMenuToggle() {
   });
 }
 
-async function loadMedia() {
+let currentPage = 1;
+
+async function loadMedia(page) {
+  if (typeof page === "number" && page > 0) {
+    currentPage = page;
+  }
   try {
-    const response = await fetch("/api/media");
+    const response = await fetch(`/api/media?page=${currentPage}`);
     if (response.status === 401) {
       document.getElementById("library").innerHTML = `
         <div class="login-prompt">
@@ -331,29 +216,55 @@ async function loadMedia() {
       return;
     }
     if (!response.ok) throw new Error("Failed to load media");
-    mediaCategories = await response.json();
+    const data = await response.json();
+
+    mediaCategories = data.categories || [];
     renderCategoryRows();
-    await renderContinueWatching();
+    renderPagination(data.page || currentPage, data.totalPages || 1);
+
+    if (typeof showCardActionsIfLoggedIn === "function")
+      showCardActionsIfLoggedIn();
   } catch (err) {
     console.error(err);
-    const container = document.getElementById("library");
-    if (container) {
-      container.innerHTML = "<p>Could not load the media library.</p>";
-    }
   }
 }
 
-async function rememberItem(item) {
-  if (!item || !item.id) return;
-  try {
-    await fetch("/api/continue-watching", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mediaId: item.id }),
-    });
-  } catch (err) {
-    console.error(err);
+function renderPagination(current, totalPages) {
+  let nav = document.getElementById("pagination");
+  if (!nav) {
+    nav = document.createElement("div");
+    nav.id = "pagination";
+    nav.style.cssText =
+      "display:flex; justify-content:center; gap:1rem; margin:1.5rem 0;";
+    const library = document.getElementById("library");
+    if (library && library.parentNode)
+      library.parentNode.insertBefore(nav, library.nextSibling);
   }
+  nav.innerHTML = "";
+  if (!totalPages || totalPages <= 1) return;
+
+  const prev = document.createElement("button");
+  prev.className = "auth-btn";
+  prev.textContent = "Previous";
+  prev.disabled = current <= 1;
+  prev.onclick = () => {
+    currentPage = current - 1;
+    loadMedia();
+  };
+
+  const info = document.createElement("span");
+  info.textContent = `Page ${current} of ${totalPages}`;
+
+  const next = document.createElement("button");
+  next.className = "auth-btn";
+  next.textContent = "Next";
+  next.disabled = current >= totalPages;
+  next.onclick = () => {
+    currentPage = current + 1;
+    loadMedia();
+  };
+
+  nav.append(prev, info, next);
 }
 
 function showAuthModal() {
@@ -810,7 +721,6 @@ document.addEventListener("DOMContentLoaded", () => {
   setupAddMedia();
   setupEdit();
   setupUsers();
-  setupPasswordReset();
 
   const originalLoadMedia = loadMedia;
   loadMedia = async function () {

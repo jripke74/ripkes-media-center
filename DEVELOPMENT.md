@@ -544,3 +544,20 @@ git commit -m "Move Continue Watching to the database"
 ```bash
 git add server.js index.html js/app.js DEVELOPMENT.md
 git commit -m "Add password reset flow"
+
+## Chunk 30: Simple Pagination
+
+### What we did
+- Added page and limit parameters to the media endpoint.
+- The API now returns 20 items per page plus total page count.
+- Added Previous/Next buttons under the library.
+
+### Key learning notes
+- `LIMIT` and `OFFSET` are the classic way to paginate in SQL.
+- The frontend receives both the items and pagination metadata.
+- Search still works; it just returns paginated results.
+
+### Commit
+```bash
+git add server.js js/app.js DEVELOPMENT.md
+git commit -m "Add simple pagination for media"
