@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Media – Ripke’s Media Center</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="header">
+    <h1 class="logo"><a href="/" style="color:inherit; text-decoration:none;">Ripke’s Media Center</a></h1>
+    <a href="/" class="auth-btn" style="margin-left:auto;">Back to Library</a>
+  </header>
+
+  <main>
+    <section class="add-media" style="margin-top:2rem;">
+      <h2>Add New Media</h2>
+      <form id="add-media-form">
+        <input type="text" id="new-title" placeholder="Title" required>
+        <input type="text" id="new-type" placeholder="Type (Movie, TV, Music…)" required>
+        <input type="text" id="new-category" placeholder="Category" required>
+        <input type="number" id="new-year" placeholder="Year" min="1900" max="2100">
+        <input type="text" id="new-genre" placeholder="Genre">
+        <input type="number" id="new-duration" placeholder="Duration (minutes)">
+        <input type="number" id="new-rating" placeholder="Rating (0–10)" step="0.1" min="0" max="10">
+        <textarea id="new-description" placeholder="Description" rows="3"></textarea>
+        <input type="url" id="new-image" placeholder="Poster image URL">
+        <label>Or upload poster</label>
+        <input type="file" id="new-image-file" accept="image/*">
+        <input type="url" id="new-video" placeholder="Video URL (optional)">
+        <label>Or upload video</label>
+        <input type="file" id="new-video-file" accept="video/*">
+        <input type="url" id="new-audio" placeholder="Audio URL (optional)">
+        <label>Or upload audio</label>
+        <input type="file" id="new-audio-file" accept="audio/*">
+        <button type="submit" class="play-button">Add Media</button>
+      </form>
+      <p id="add-media-message"></p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; <span id="current-year"></span> Jeff Ripke. All rights reserved.</p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

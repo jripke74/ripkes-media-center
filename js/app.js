@@ -13,16 +13,18 @@ function createMediaCard(item) {
   card.dataset.genre = (item.genre || "").toLowerCase();
   card.dataset.description = (item.description || "").toLowerCase();
 
-  const progressBar =
-    item.progress && item.progress > 0
-      ? `<div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, item.progress)}%"></div></div>`
-      : "";
+  const progressBar = (item.progress && item.progress > 0)
+    ? `<div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, item.progress)}%"></div></div>`
+    : "";
+
+  const yearText = item.year ? `<div class="media-year">${item.year}</div>` : "";
 
   card.innerHTML = `
-    <img src="${item.image || ""}" alt="${item.title || ""}">
+    <img src="${item.image || ''}" alt="${item.title || ''}">
     ${progressBar}
     <div class="media-info">
-      <div class="media-title">${item.title || ""}</div>
+      <div class="media-title">${item.title || ''}</div>
+      ${yearText}
     </div>
   `;
 
@@ -34,7 +36,7 @@ function renderCategoryRows() {
   const container = document.getElementById("library");
   container.innerHTML = "";
 
-  mediaCategories.forEach((category) => {
+  mediaCategories.forEach(category => {
     const section = document.createElement("section");
     section.className = "category-row";
 
@@ -45,7 +47,7 @@ function renderCategoryRows() {
     const scroller = document.createElement("div");
     scroller.className = "row-scroller";
 
-    category.items.forEach((item) => {
+    category.items.forEach(item => {
       scroller.appendChild(createMediaCard(item));
     });
 
@@ -58,13 +60,14 @@ function filterMedia(query) {
   const q = query.toLowerCase().trim();
   const rows = document.querySelectorAll(".category-row");
 
-  rows.forEach((row) => {
+  rows.forEach(row => {
     const cards = row.querySelectorAll(".media-card");
     let visibleCount = 0;
 
-    cards.forEach((card) => {
-      const matches =
-        !q || card.dataset.title.includes(q) || card.dataset.type.includes(q);
+    cards.forEach(card => {
+      const matches = !q ||
+        card.dataset.title.includes(q) ||
+        card.dataset.type.includes(q);
       card.style.display = matches ? "" : "none";
       if (matches) visibleCount++;
     });
@@ -74,34 +77,39 @@ function filterMedia(query) {
 }
 
 function openDetail(item) {
+  console.log("openDetail called for:", item.title);
   const img = document.getElementById("detail-image");
   const video = document.getElementById("detail-video");
   const playBtn = document.getElementById("detail-play");
 
   document.getElementById("detail-title").textContent = item.title;
   document.getElementById("detail-type").textContent = item.type || "";
-  document.getElementById("detail-year").textContent = item.year
-    ? `Year: ${item.year}`
-    : "";
+  document.getElementById("detail-year").textContent = item.year ? `Year: ${item.year}` : "";
   const genreEl = document.getElementById("detail-genre");
   const durationEl = document.getElementById("detail-duration");
   const ratingEl = document.getElementById("detail-rating");
+  if (genreEl) genreEl.textContent = item.genre ? `Genre: ${item.genre}` : "";
+  if (durationEl) durationEl.textContent = item.duration ? `Duration: ${item.duration} min` : "";
+  if (ratingEl) ratingEl.textContent = item.rating ? `Rating: ${item.rating}/10` : "";
+  document.getElementById("detail-description").textContent = item.description || "";
+
+  // Edit / Delete buttons (admin only)
   const actions = document.getElementById("detail-actions");
   const editBtn = document.getElementById("detail-edit");
   const deleteBtn = document.getElementById("detail-delete");
-
   if (actions && editBtn && deleteBtn) {
-    // Show buttons only for admins
     fetch("/api/me")
-      .then((r) => r.json())
-      .then((data) => {
+      .then(r => r.json())
+      .then(data => {
         if (data.loggedIn && data.isAdmin) {
           actions.classList.remove("hidden");
-          editBtn.onclick = () => {
+          editBtn.onclick = (e) => {
+            e.stopPropagation();
             closeDetail();
             openEditModal(item);
           };
-          deleteBtn.onclick = () => {
+          deleteBtn.onclick = (e) => {
+            e.stopPropagation();
             if (confirm("Delete this item?")) {
               deleteMedia(item.id);
               closeDetail();
@@ -113,15 +121,6 @@ function openDetail(item) {
       })
       .catch(() => actions.classList.add("hidden"));
   }
-  if (genreEl) genreEl.textContent = item.genre ? `Genre: ${item.genre}` : "";
-  if (durationEl)
-    durationEl.textContent = item.duration
-      ? `Duration: ${item.duration} min`
-      : "";
-  if (ratingEl)
-    ratingEl.textContent = item.rating ? `Rating: ${item.rating}/10` : "";
-  document.getElementById("detail-description").textContent =
-    item.description || "";
 
   // Reset previous video
   video.pause();
@@ -134,22 +133,16 @@ function openDetail(item) {
     video.style.display = "block";
     video.src = item.video_url;
     playBtn.textContent = "▶ Play Video";
-    playBtn.onclick = () => video.play();
-
-    // Resume from saved progress
-    video.onloadedmetadata = () => {
-      if (item.progress && item.progress > 0 && item.progress < 95) {
-        video.currentTime = (item.progress / 100) * video.duration;
-      }
+    playBtn.onclick = () => {
+      video.play();
     };
-
     video.ontimeupdate = () => {
       if (video.duration && item.id) {
         const progress = Math.round((video.currentTime / video.duration) * 100);
         fetch("/api/continue-watching", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mediaId: item.id, progress }),
+          body: JSON.stringify({ mediaId: item.id, progress })
         }).catch(() => {});
       }
     };
@@ -158,7 +151,9 @@ function openDetail(item) {
     img.alt = item.title;
     playBtn.textContent = "▶ Play";
     playBtn.onclick = () => {
-      alert("No video available for this item yet.");
+      if (item.video_url) {
+        video.play();
+      }
     };
   }
 
@@ -253,13 +248,13 @@ async function loadMedia(page) {
     }
     if (!response.ok) throw new Error("Failed to load media");
     const data = await response.json();
+    console.log("Server returned page:", data.page, "of", data.totalPages);
 
     mediaCategories = data.categories || [];
     renderCategoryRows();
     renderPagination(data.page || currentPage, data.totalPages || 1);
 
-    if (typeof showCardActionsIfLoggedIn === "function")
-      showCardActionsIfLoggedIn();
+    if (typeof showCardActionsIfLoggedIn === "function") showCardActionsIfLoggedIn();
   } catch (err) {
     console.error(err);
   }
@@ -271,11 +266,9 @@ function renderPagination(current, totalPages) {
   if (!nav) {
     nav = document.createElement("div");
     nav.id = "pagination";
-    nav.style.cssText =
-      "display:flex; justify-content:center; gap:1rem; margin:1.5rem 0;";
+    nav.style.cssText = "display:flex; justify-content:center; gap:1rem; margin:1.5rem 0;";
     const library = document.getElementById("library");
-    if (library && library.parentNode)
-      library.parentNode.insertBefore(nav, library.nextSibling);
+    if (library && library.parentNode) library.parentNode.insertBefore(nav, library.nextSibling);
   }
   nav.innerHTML = "";
   if (!totalPages || totalPages <= 1) return;
@@ -285,6 +278,7 @@ function renderPagination(current, totalPages) {
   prev.textContent = "Previous";
   prev.disabled = current <= 1;
   prev.onclick = () => {
+    console.log("Prev clicked");
     currentPage = current - 1;
     loadMedia();
   };
@@ -297,6 +291,7 @@ function renderPagination(current, totalPages) {
   next.textContent = "Next";
   next.disabled = current >= totalPages;
   next.onclick = () => {
+    console.log("Next clicked");
     currentPage = current + 1;
     loadMedia();
   };
@@ -319,15 +314,15 @@ function updateAuthUI(user) {
 
   if (user && user.loggedIn) {
     authArea.innerHTML = `
+      ${user.isAdmin ? '<a href="/add-media.html" class="auth-btn" style="color:#fff;">Add Media</a>' : ''}
+      ${user.isAdmin ? '<a href="/admin-users.html" class="auth-btn" style="color:#fff;">Users</a>' : ''}
       <span>${user.email}</span>
       <button id="logout-btn" class="auth-btn">Log out</button>
     `;
     document.getElementById("logout-btn").addEventListener("click", logout);
   } else {
     authArea.innerHTML = `<button id="show-login" class="auth-btn">Log in</button>`;
-    document
-      .getElementById("show-login")
-      .addEventListener("click", showAuthModal);
+    document.getElementById("show-login").addEventListener("click", showAuthModal);
   }
 }
 
@@ -356,12 +351,11 @@ async function handleAuthSubmit(e) {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password })
     });
     const data = await res.json();
     if (!res.ok) {
-      document.getElementById("auth-message").textContent =
-        data.error || "Something went wrong";
+      document.getElementById("auth-message").textContent = data.error || "Something went wrong";
       return;
     }
     hideAuthModal();
@@ -394,15 +388,11 @@ function setupAuth() {
     toggleLink.addEventListener("click", (e) => {
       e.preventDefault();
       isLoginMode = !isLoginMode;
-      document.getElementById("auth-title").textContent = isLoginMode
-        ? "Log in"
-        : "Register";
+      document.getElementById("auth-title").textContent = isLoginMode ? "Log in" : "Register";
       document.getElementById("auth-toggle-text").innerHTML = isLoginMode
         ? 'Need an account? <a href="#" id="toggle-auth-mode">Register</a>'
         : 'Already have an account? <a href="#" id="toggle-auth-mode">Log in</a>';
-      document
-        .getElementById("toggle-auth-mode")
-        .addEventListener("click", arguments.callee);
+      document.getElementById("toggle-auth-mode").addEventListener("click", arguments.callee);
     });
   }
 
@@ -417,7 +407,7 @@ function setupAddMedia() {
 
   section.classList.add("hidden");
 
-  window.updateAddMediaVisibility = async function () {
+  window.updateAddMediaVisibility = async function() {
     try {
       const res = await fetch("/api/me");
       const data = await res.json();
@@ -450,43 +440,16 @@ function setupAddMedia() {
     formData.append("category", category);
     formData.append("year", document.getElementById("new-year").value || "");
     formData.append("genre", document.getElementById("new-genre").value.trim());
-    formData.append(
-      "duration",
-      document.getElementById("new-duration").value || "",
-    );
-    formData.append(
-      "rating",
-      document.getElementById("new-rating").value || "",
-    );
-    formData.append(
-      "description",
-      document.getElementById("new-description").value.trim(),
-    );
+    formData.append("duration", document.getElementById("new-duration").value || "");
+    formData.append("rating", document.getElementById("new-rating").value || "");
+    formData.append("description", document.getElementById("new-description").value.trim());
     formData.append("image", document.getElementById("new-image").value.trim());
-    formData.append(
-      "video_url",
-      document.getElementById("new-video").value.trim(),
-    );
-    formData.append(
-      "audio_url",
-      document.getElementById("new-audio").value.trim(),
-    );
+    formData.append("video_url", document.getElementById("new-video").value.trim());
+    formData.append("audio_url", document.getElementById("new-audio").value.trim());
 
-    if (document.getElementById("new-image-file").files[0])
-      formData.append(
-        "imageFile",
-        document.getElementById("new-image-file").files[0],
-      );
-    if (document.getElementById("new-video-file").files[0])
-      formData.append(
-        "videoFile",
-        document.getElementById("new-video-file").files[0],
-      );
-    if (document.getElementById("new-audio-file").files[0])
-      formData.append(
-        "audioFile",
-        document.getElementById("new-audio-file").files[0],
-      );
+    if (document.getElementById("new-image-file").files[0]) formData.append("imageFile", document.getElementById("new-image-file").files[0]);
+    if (document.getElementById("new-video-file").files[0]) formData.append("videoFile", document.getElementById("new-video-file").files[0]);
+    if (document.getElementById("new-audio-file").files[0]) formData.append("audioFile", document.getElementById("new-audio-file").files[0]);
 
     try {
       const res = await fetch("/api/media", { method: "POST", body: formData });
@@ -544,69 +507,24 @@ function setupEdit() {
       e.preventDefault();
       const id = document.getElementById("edit-id").value;
       const formData = new FormData();
-      formData.append(
-        "title",
-        document.getElementById("edit-title").value.trim(),
-      );
-      formData.append(
-        "type",
-        document.getElementById("edit-type").value.trim(),
-      );
-      formData.append(
-        "category",
-        document.getElementById("edit-category").value.trim(),
-      );
+      formData.append("title", document.getElementById("edit-title").value.trim());
+      formData.append("type", document.getElementById("edit-type").value.trim());
+      formData.append("category", document.getElementById("edit-category").value.trim());
       formData.append("year", document.getElementById("edit-year").value || "");
-      formData.append(
-        "genre",
-        document.getElementById("edit-genre").value.trim(),
-      );
-      formData.append(
-        "duration",
-        document.getElementById("edit-duration").value || "",
-      );
-      formData.append(
-        "rating",
-        document.getElementById("edit-rating").value || "",
-      );
-      formData.append(
-        "description",
-        document.getElementById("edit-description").value.trim(),
-      );
-      formData.append(
-        "image",
-        document.getElementById("edit-image").value.trim(),
-      );
-      formData.append(
-        "video_url",
-        document.getElementById("edit-video").value.trim(),
-      );
-      formData.append(
-        "audio_url",
-        document.getElementById("edit-audio").value.trim(),
-      );
+      formData.append("genre", document.getElementById("edit-genre").value.trim());
+      formData.append("duration", document.getElementById("edit-duration").value || "");
+      formData.append("rating", document.getElementById("edit-rating").value || "");
+      formData.append("description", document.getElementById("edit-description").value.trim());
+      formData.append("image", document.getElementById("edit-image").value.trim());
+      formData.append("video_url", document.getElementById("edit-video").value.trim());
+      formData.append("audio_url", document.getElementById("edit-audio").value.trim());
 
-      if (document.getElementById("edit-image-file")?.files[0])
-        formData.append(
-          "imageFile",
-          document.getElementById("edit-image-file").files[0],
-        );
-      if (document.getElementById("edit-video-file")?.files[0])
-        formData.append(
-          "videoFile",
-          document.getElementById("edit-video-file").files[0],
-        );
-      if (document.getElementById("edit-audio-file")?.files[0])
-        formData.append(
-          "audioFile",
-          document.getElementById("edit-audio-file").files[0],
-        );
+      if (document.getElementById("edit-image-file")?.files[0]) formData.append("imageFile", document.getElementById("edit-image-file").files[0]);
+      if (document.getElementById("edit-video-file")?.files[0]) formData.append("videoFile", document.getElementById("edit-video-file").files[0]);
+      if (document.getElementById("edit-audio-file")?.files[0]) formData.append("audioFile", document.getElementById("edit-audio-file").files[0]);
 
       try {
-        const res = await fetch(`/api/media/${id}`, {
-          method: "PUT",
-          body: formData,
-        });
+        const res = await fetch(`/api/media/${id}`, { method: "PUT", body: formData });
         if (!res.ok) {
           const data = await res.json();
           if (message) message.textContent = data.error || "Failed to update";
@@ -640,9 +558,9 @@ async function deleteMedia(id) {
 
 function showCardActionsIfLoggedIn() {
   fetch("/api/me")
-    .then((r) => r.json())
-    .then((data) => {
-      document.querySelectorAll(".card-actions").forEach((el) => {
+    .then(r => r.json())
+    .then(data => {
+      document.querySelectorAll(".card-actions").forEach(el => {
         el.classList.toggle("hidden", !(data.loggedIn && data.isAdmin));
       });
     })
@@ -650,20 +568,17 @@ function showCardActionsIfLoggedIn() {
 }
 
 function setupUsers() {
-  const section = document.getElementById("users-section");
   const list = document.getElementById("users-list");
-  if (!section || !list) return;
+  if (!list) return;
 
   async function loadUsers() {
     try {
       const meRes = await fetch("/api/me");
       const me = await meRes.json();
       if (!me.loggedIn || !me.isAdmin) {
-        section.classList.add("hidden");
-        list.innerHTML = "";
+        list.innerHTML = "<p>Admin access required.</p>";
         return;
       }
-      section.classList.remove("hidden");
 
       const usersRes = await fetch("/api/users");
       if (!usersRes.ok) {
@@ -675,9 +590,7 @@ function setupUsers() {
         list.innerHTML = "<p>No users found</p>";
         return;
       }
-      list.innerHTML = users
-        .map(
-          (u) => `
+      list.innerHTML = users.map(u => `
         <div style="padding:0.6rem 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
           <div>
             <strong>${u.email}</strong>
@@ -685,9 +598,7 @@ function setupUsers() {
               ${u.is_admin ? "Admin" : "User"}
             </span>
           </div>
-          ${
-            u.id !== me.id
-              ? `
+          ${u.id !== me.id ? `
             <div style="display:flex; gap:0.4rem;">
               <button class="auth-btn toggle-admin" data-id="${u.id}" style="font-size:0.85rem; padding:0.3rem 0.7rem;">
                 ${u.is_admin ? "Remove Admin" : "Make Admin"}
@@ -696,55 +607,37 @@ function setupUsers() {
                 Delete
               </button>
             </div>
-          `
-              : ""
-          }
+          ` : ""}
         </div>
-      `,
-        )
-        .join("");
+      `).join("");
 
-      list.querySelectorAll(".toggle-admin").forEach((btn) => {
+      list.querySelectorAll(".toggle-admin").forEach(btn => {
         btn.addEventListener("click", async () => {
           const id = btn.dataset.id;
           try {
-            const res = await fetch(`/api/users/${id}/toggle-admin`, {
-              method: "POST",
-            });
-            if (!res.ok) {
-              alert("Could not update");
-              return;
-            }
+            const res = await fetch(`/api/users/${id}/toggle-admin`, { method: "POST" });
+            if (!res.ok) { alert("Could not update"); return; }
             loadUsers();
-          } catch (err) {
-            alert("Network error");
-          }
+          } catch (err) { alert("Network error"); }
         });
       });
 
-      list.querySelectorAll(".delete-user").forEach((btn) => {
+      list.querySelectorAll(".delete-user").forEach(btn => {
         btn.addEventListener("click", async () => {
           const id = btn.dataset.id;
           if (!confirm("Delete this user?")) return;
           try {
             const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
-            if (!res.ok) {
-              alert("Could not delete");
-              return;
-            }
+            if (!res.ok) { alert("Could not delete"); return; }
             loadUsers();
-          } catch (err) {
-            alert("Network error");
-          }
+          } catch (err) { alert("Network error"); }
         });
       });
     } catch (err) {
-      section.classList.add("hidden");
-      list.innerHTML = "";
+      list.innerHTML = "<p>Could not load users</p>";
     }
   }
 
-  window.loadUsers = loadUsers;
   loadUsers();
 }
 
@@ -760,7 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupUsers();
 
   const originalLoadMedia = loadMedia;
-  loadMedia = async function () {
+  loadMedia = async function() {
     await originalLoadMedia();
     showCardActionsIfLoggedIn();
   };
