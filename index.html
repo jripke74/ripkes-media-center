@@ -88,6 +88,12 @@
       <p id="detail-duration"></p>
       <p id="detail-rating"></p>
       <p id="detail-description"></p>
+      <div id="detail-actions" class="card-actions hidden"
+        style="margin-top:1rem;">
+        <button id="detail-edit" class="auth-btn">Edit</button>
+        <button id="detail-delete" class="auth-btn"
+          style="background:#ff3b30;">Delete</button>
+      </div>
       <button id="detail-play" class="play-button">▶ Play</button>
     </div>
   </div>
@@ -103,27 +109,6 @@
           placeholder="Password" required>
         <button type="submit" class="play-button">Submit</button>
       </form>
-      <div id="reset-section" class="hidden">
-        <h3>Reset Password</h3>
-        <form id="forgot-form">
-          <input type="email" id="forgot-email" placeholder="Email"
-            required>
-          <button type="submit" class="play-button">Get Reset
-            Code</button>
-        </form>
-        <form id="reset-form" class="hidden"
-          style="margin-top:1rem;">
-          <input type="text" id="reset-code"
-            placeholder="Reset code" required>
-          <input type="password" id="reset-password"
-            placeholder="New password" required>
-          <button type="submit" class="play-button">Set New
-            Password</button>
-        </form>
-        <p id="reset-message"></p>
-        <p><a href="#" id="back-to-login">Back to login</a></p>
-      </div>
-      <p><a href="#" id="show-reset">Forgot password?</a></p>
       <p id="auth-toggle-text">Need an account? <a href="#"
           id="toggle-auth-mode">Register</a></p>
       <p id="auth-message"></p>

@@ -18,41 +18,15 @@ function createMediaCard(item) {
       ? `<div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, item.progress)}%"></div></div>`
       : "";
 
-  const genreText = item.genre
-    ? `<div class="media-genre">${item.genre}</div>`
-    : "";
-  const descText = item.description
-    ? `<div class="media-desc">${item.description.substring(0, 80)}${item.description.length > 80 ? "…" : ""}</div>`
-    : "";
-
   card.innerHTML = `
     <img src="${item.image || ""}" alt="${item.title || ""}">
     ${progressBar}
     <div class="media-info">
       <div class="media-title">${item.title || ""}</div>
-      ${genreText}
-      ${descText}
-    </div>
-    <div class="card-actions hidden">
-      <button class="card-edit" data-id="${item.id}">Edit</button>
-      <button class="card-delete" data-id="${item.id}">Delete</button>
     </div>
   `;
-  card.addEventListener("click", (e) => {
-    if (
-      e.target.classList.contains("card-edit") ||
-      e.target.classList.contains("card-delete")
-    )
-      return;
-    openDetail(item);
-  });
 
-  const editBtn = card.querySelector(".card-edit");
-  const deleteBtn = card.querySelector(".card-delete");
-  if (editBtn) editBtn.addEventListener("click", () => openEditModal(item));
-  if (deleteBtn)
-    deleteBtn.addEventListener("click", () => deleteMedia(item.id));
-
+  card.addEventListener("click", () => openDetail(item));
   return card;
 }
 
@@ -112,6 +86,33 @@ function openDetail(item) {
   const genreEl = document.getElementById("detail-genre");
   const durationEl = document.getElementById("detail-duration");
   const ratingEl = document.getElementById("detail-rating");
+  const actions = document.getElementById("detail-actions");
+  const editBtn = document.getElementById("detail-edit");
+  const deleteBtn = document.getElementById("detail-delete");
+
+  if (actions && editBtn && deleteBtn) {
+    // Show buttons only for admins
+    fetch("/api/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.loggedIn && data.isAdmin) {
+          actions.classList.remove("hidden");
+          editBtn.onclick = () => {
+            closeDetail();
+            openEditModal(item);
+          };
+          deleteBtn.onclick = () => {
+            if (confirm("Delete this item?")) {
+              deleteMedia(item.id);
+              closeDetail();
+            }
+          };
+        } else {
+          actions.classList.add("hidden");
+        }
+      })
+      .catch(() => actions.classList.add("hidden"));
+  }
   if (genreEl) genreEl.textContent = item.genre ? `Genre: ${item.genre}` : "";
   if (durationEl)
     durationEl.textContent = item.duration
