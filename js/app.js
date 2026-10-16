@@ -10,10 +10,28 @@ function createMediaCard(item) {
   card.dataset.id = item.id;
   card.dataset.title = (item.title || "").toLowerCase();
   card.dataset.type = (item.type || "").toLowerCase();
+  card.dataset.genre = (item.genre || "").toLowerCase();
+  card.dataset.description = (item.description || "").toLowerCase();
+
+  const progressBar =
+    item.progress && item.progress > 0
+      ? `<div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, item.progress)}%"></div></div>`
+      : "";
+
+  const genreText = item.genre
+    ? `<div class="media-genre">${item.genre}</div>`
+    : "";
+  const descText = item.description
+    ? `<div class="media-desc">${item.description.substring(0, 80)}${item.description.length > 80 ? "…" : ""}</div>`
+    : "";
+
   card.innerHTML = `
     <img src="${item.image || ""}" alt="${item.title || ""}">
+    ${progressBar}
     <div class="media-info">
       <div class="media-title">${item.title || ""}</div>
+      ${genreText}
+      ${descText}
     </div>
     <div class="card-actions hidden">
       <button class="card-edit" data-id="${item.id}">Edit</button>
@@ -115,8 +133,24 @@ function openDetail(item) {
     video.style.display = "block";
     video.src = item.video_url;
     playBtn.textContent = "▶ Play Video";
-    playBtn.onclick = () => {
-      video.play();
+    playBtn.onclick = () => video.play();
+
+    // Resume from saved progress
+    video.onloadedmetadata = () => {
+      if (item.progress && item.progress > 0 && item.progress < 95) {
+        video.currentTime = (item.progress / 100) * video.duration;
+      }
+    };
+
+    video.ontimeupdate = () => {
+      if (video.duration && item.id) {
+        const progress = Math.round((video.currentTime / video.duration) * 100);
+        fetch("/api/continue-watching", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mediaId: item.id, progress }),
+        }).catch(() => {});
+      }
     };
   } else {
     img.src = item.image;
@@ -201,6 +235,7 @@ async function loadMedia(page) {
   if (typeof page === "number" && page > 0) {
     currentPage = page;
   }
+  console.log("loadMedia using currentPage:", currentPage);
   try {
     const response = await fetch(`/api/media?page=${currentPage}`);
     if (response.status === 401) {
@@ -230,6 +265,7 @@ async function loadMedia(page) {
 }
 
 function renderPagination(current, totalPages) {
+  console.log("renderPagination:", current, totalPages);
   let nav = document.getElementById("pagination");
   if (!nav) {
     nav = document.createElement("div");

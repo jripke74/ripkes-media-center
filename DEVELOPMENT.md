@@ -561,3 +561,37 @@ git commit -m "Add password reset flow"
 ```bash
 git add server.js js/app.js DEVELOPMENT.md
 git commit -m "Add simple pagination for media"
+
+## Chunk 31: Watch Progress Percentage
+
+### What we did
+- Added a `progress` column to the continue_watching table.
+- Saved the video playback percentage while watching.
+- Displayed a progress bar on media cards that have been partially watched.
+
+### Key learning notes
+- `video.ontimeupdate` fires as the video plays.
+- We store progress as a percentage (0–100).
+- The progress bar is only shown when progress is greater than 0.
+
+### Commit
+```bash
+git add server.js js/app.js css/styles.css DEVELOPMENT.md
+git commit -m "Add watch progress percentage"
+
+## Chunk 32: Resume Playback from Progress
+
+### What we did
+- Videos now start from the saved progress percentage.
+- Progress is only resumed if it is between 1% and 95% (avoids restarting near the end).
+- The timeupdate listener continues to save progress while watching.
+
+### Key learning notes
+- `video.onloadedmetadata` fires when the browser knows the duration.
+- Setting `video.currentTime` jumps to a specific point.
+- We skip resume if progress is very high so finished videos start at the beginning.
+
+### Commit
+```bash
+git add js/app.js server.js DEVELOPMENT.md
+git commit -m "Resume video playback from saved progress"
